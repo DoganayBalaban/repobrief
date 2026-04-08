@@ -1,5 +1,8 @@
 import { getOctokit } from "@/lib/octokit";
 import { fetchFileTree } from "@/lib/file-tree";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 interface Props {
@@ -16,37 +19,59 @@ export default async function RepoPage({ params }: Props) {
   ]);
 
   return (
-    <div>
-      <div className="mb-8">
-        <Link
-          href="/dashboard"
-          className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors mb-4 inline-block"
-        >
-          ← back
-        </Link>
-        <h2 className="text-xl font-semibold text-zinc-100">{repoData.full_name}</h2>
-        {repoData.description && (
-          <p className="mt-1 text-sm text-zinc-400">{repoData.description}</p>
-        )}
-        <div className="flex gap-3 mt-3 text-xs text-zinc-500 font-mono">
-          <span>⭐ {repoData.stargazers_count}</span>
-          {repoData.language && <span>· {repoData.language}</span>}
-          <span>· {repoData.default_branch}</span>
-        </div>
+    <div className="flex flex-col gap-6">
+      <div>
+        <Button variant="ghost" size="sm" asChild className="mb-4 -ml-2">
+          <Link href="/dashboard">← Back</Link>
+        </Button>
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle>{repoData.full_name}</CardTitle>
+                {repoData.description && (
+                  <CardDescription className="mt-1">
+                    {repoData.description}
+                  </CardDescription>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {repoData.private && <Badge variant="outline">private</Badge>}
+                {repoData.language && (
+                  <Badge variant="secondary">{repoData.language}</Badge>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-4 text-xs text-muted-foreground font-mono pt-1">
+              <span>⭐ {repoData.stargazers_count}</span>
+              <span>branch: {repoData.default_branch}</span>
+              <span>
+                {repoData.open_issues_count} open issue
+                {repoData.open_issues_count !== 1 ? "s" : ""}
+              </span>
+            </div>
+          </CardHeader>
+        </Card>
       </div>
 
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-        <p className="text-xs font-mono text-zinc-500 mb-4">
-          {files.length} files indexed
-        </p>
-        <ul className="flex flex-col gap-1 max-h-96 overflow-y-auto">
-          {files.map((f) => (
-            <li key={f.path} className="font-mono text-xs text-zinc-400 hover:text-zinc-200 transition-colors">
-              {f.path}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">File Tree</CardTitle>
+          <CardDescription>{files.length} files indexed</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="max-h-96 overflow-y-auto flex flex-col gap-1">
+            {files.map((f) => (
+              <li
+                key={f.path}
+                className="font-mono text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {f.path}
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
     </div>
   );
 }

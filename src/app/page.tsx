@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export default async function LandingPage() {
   const session = await auth();
@@ -81,7 +81,6 @@ export default async function LandingPage() {
 
         {/* Hero */}
         <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center py-24">
-
           {/* Badge */}
           <div className="anim-1 mb-8">
             <span className="font-mono text-xs text-lime-400 tracking-widest uppercase border border-lime-400/20 bg-lime-400/5 px-4 py-1.5 rounded-full">
@@ -98,21 +97,28 @@ export default async function LandingPage() {
 
           {/* Subheading */}
           <p className="anim-3 font-mono text-sm md:text-base text-zinc-400 max-w-sm mb-12 leading-relaxed">
-            Connect GitHub. Pick a repo. Get a complete AI breakdown — architecture, stack, purpose — in seconds.
+            Connect GitHub. Pick a repo. Get a complete AI breakdown —
+            architecture, stack, purpose — in seconds.
           </p>
 
           {/* CTA */}
-          <div className="anim-4 flex flex-col sm:flex-row items-center gap-4">
+          <div className="anim-4 flex flex-row items-center justify-center gap-4">
             <Link
               href="/auth"
-              className="group flex items-center gap-2.5 bg-lime-400 text-zinc-950 font-mono font-bold text-sm px-7 py-3.5 rounded-sm hover:bg-lime-300 transition-colors"
+              className="group flex items-center  gap-2.5 bg-lime-400 text-zinc-950 font-mono font-bold text-sm px-7 py-3.5 rounded-sm hover:bg-lime-300 transition-colors"
             >
-              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current shrink-0" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-4 w-4 fill-current shrink-0"
+                aria-hidden="true"
+              >
                 <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
               </svg>
               Get started free
             </Link>
-            <span className="font-mono text-xs text-zinc-600">no credit card · free forever</span>
+            <span className="font-mono text-xs text-zinc-600">
+              no credit card · free forever
+            </span>
           </div>
         </main>
 
@@ -136,10 +142,17 @@ export default async function LandingPage() {
                 desc: "Get a structured summary: purpose, tech stack, architecture, and key entry points.",
               },
             ].map((f) => (
-              <div key={f.num} className="card-hover bg-zinc-950 p-7 border border-transparent">
+              <div
+                key={f.num}
+                className="card-hover bg-zinc-950 p-7 border border-transparent"
+              >
                 <p className="font-mono text-xs text-zinc-700 mb-3">{f.num}</p>
-                <h3 className="font-black text-zinc-100 text-lg mb-2 tracking-tight">{f.title}</h3>
-                <p className="font-mono text-xs text-zinc-500 leading-relaxed">{f.desc}</p>
+                <h3 className="font-black text-zinc-100 text-lg mb-2 tracking-tight">
+                  {f.title}
+                </h3>
+                <p className="font-mono text-xs text-zinc-500 leading-relaxed">
+                  {f.desc}
+                </p>
               </div>
             ))}
           </div>
@@ -147,8 +160,12 @@ export default async function LandingPage() {
 
         {/* Footer */}
         <footer className="relative z-10 border-t border-zinc-800/60 px-8 py-5 flex items-center justify-between">
-          <span className="font-mono text-xs text-zinc-700">RepoBrief © 2026</span>
-          <span className="font-mono text-xs text-zinc-800">built with claude + next.js</span>
+          <span className="font-mono text-xs text-zinc-700">
+            RepoBrief © 2026
+          </span>
+          <span className="font-mono text-xs text-zinc-800">
+            built with claude + next.js
+          </span>
         </footer>
       </div>
     </>

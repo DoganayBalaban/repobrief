@@ -1,5 +1,6 @@
 import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 export default async function DashboardLayout({
   children,
@@ -7,19 +8,14 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-
-  if (!session?.user) {
-    redirect("/");
-  }
+  if (!session?.user) redirect("/");
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="min-h-screen bg-background">
+      <header className="border-b">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-6">
-          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-            RepoBrief
-          </span>
-          <div className="flex items-center gap-4">
+          <span className="font-semibold">RepoBrief</span>
+          <div className="flex items-center gap-3">
             {session.user.image && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -28,7 +24,7 @@ export default async function DashboardLayout({
                 className="h-7 w-7 rounded-full"
               />
             )}
-            <span className="text-sm text-zinc-500">
+            <span className="text-sm text-muted-foreground">
               {session.user.name ?? session.user.email}
             </span>
             <form
@@ -37,12 +33,9 @@ export default async function DashboardLayout({
                 await signOut({ redirectTo: "/" });
               }}
             >
-              <button
-                type="submit"
-                className="rounded-full border border-zinc-300 px-4 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              >
+              <Button type="submit" variant="outline" size="sm">
                 Sign out
-              </button>
+              </Button>
             </form>
           </div>
         </div>

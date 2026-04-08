@@ -1,4 +1,6 @@
 import { getOctokit } from "@/lib/octokit";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -10,33 +12,36 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <h2 className="mb-6 text-lg font-semibold text-zinc-100">
-        Your Repositories
-      </h2>
+      <h2 className="mb-6 text-lg font-semibold">Your Repositories</h2>
       <ul className="flex flex-col gap-3">
         {data.map((repo) => {
           const [owner, repoName] = repo.full_name.split("/");
           return (
             <li key={repo.id}>
-              <Link
-                href={`/dashboard/${owner}/${repoName}`}
-                className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900 p-4 hover:border-zinc-700 hover:bg-zinc-800/60 transition-colors"
-              >
-                <div>
-                  <span className="font-medium text-zinc-100">{repo.full_name}</span>
-                  {repo.description && (
-                    <p className="mt-1 text-sm text-zinc-500">{repo.description}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 text-xs text-zinc-500 shrink-0 ml-4">
-                  {repo.private && (
-                    <span className="rounded-full border border-zinc-700 px-2 py-0.5">
-                      private
-                    </span>
-                  )}
-                  <span>⭐ {repo.stargazers_count}</span>
-                  <span className="text-zinc-700">→</span>
-                </div>
+              <Link href={`/dashboard/${owner}/${repoName}`}>
+                <Card className="cursor-pointer transition-colors hover:bg-muted/50">
+                  <CardContent className="flex items-center justify-between py-2">
+                    <div>
+                      <p className="font-medium">{repo.full_name}</p>
+                      {repo.description && (
+                        <p className="mt-0.5 text-sm text-muted-foreground line-clamp-1">
+                          {repo.description}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-4">
+                      {repo.private && (
+                        <Badge variant="outline">private</Badge>
+                      )}
+                      {repo.language && (
+                        <Badge variant="secondary">{repo.language}</Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        ⭐ {repo.stargazers_count}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
               </Link>
             </li>
           );
