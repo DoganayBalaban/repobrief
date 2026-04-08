@@ -3,6 +3,7 @@ import { fetchFileTree } from "@/lib/file-tree";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AnalyzeButton } from "@/components/analyze-button";
 import Link from "next/link";
 
 interface Props {
@@ -53,6 +54,8 @@ export default async function RepoPage({ params }: Props) {
           </CardHeader>
         </Card>
       </div>
+
+      <AnalyzeButton owner={owner} repo={repo} />
 
       <Card>
         <CardHeader>
