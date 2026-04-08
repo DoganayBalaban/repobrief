@@ -22,6 +22,7 @@ export default async function AuthPage() {
             Connect your GitHub account to get started.
           </CardDescription>
         </CardHeader>
+
         <CardContent>
           <form
             action={async () => {
