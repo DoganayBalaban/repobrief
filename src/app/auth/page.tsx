@@ -1,5 +1,6 @@
 import { auth, signIn } from "@/auth";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 const GH_ICON = (
   <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current shrink-0" aria-hidden="true">
@@ -56,9 +57,9 @@ export default async function AuthPage() {
         <div className="auth-card relative z-10 w-full max-w-sm px-6">
           {/* Logo */}
           <div className="text-center mb-10">
-            <a href="/" className="inline-block font-mono text-base tracking-widest uppercase text-zinc-100">
+            <Link href="/" className="inline-block font-mono text-base tracking-widest uppercase text-zinc-100">
               repo<span className="text-lime-400">brief</span>
-            </a>
+            </Link>
           </div>
 
           {/* Card */}

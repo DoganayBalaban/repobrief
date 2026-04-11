@@ -184,7 +184,7 @@ export default async function LandingPage() {
         <section id="how" className="relative z-10 px-6 py-24 border-t border-zinc-800/50">
           <div className="max-w-4xl mx-auto">
             <div className="a5 mb-16 text-center">
-              <p className="mono text-xs text-lime-400 tracking-widest uppercase mb-3">// how it works</p>
+              <p className="mono text-xs text-lime-400 tracking-widest uppercase mb-3">&#47;&#47; how it works</p>
               <h2 className="text-3xl md:text-4xl font-black tracking-tighter">Three steps to clarity</h2>
             </div>
 
@@ -243,7 +243,7 @@ export default async function LandingPage() {
         <section id="pricing" className="relative z-10 px-6 py-24 border-t border-zinc-800/50">
           <div className="max-w-3xl mx-auto">
             <div className="mb-16 text-center">
-              <p className="mono text-xs text-lime-400 tracking-widest uppercase mb-3">// pricing</p>
+              <p className="mono text-xs text-lime-400 tracking-widest uppercase mb-3">&#47;&#47; pricing</p>
               <h2 className="text-3xl md:text-4xl font-black tracking-tighter mb-4">Simple, transparent</h2>
               <p className="mono text-sm text-zinc-500">Start free. Upgrade when you need more.</p>
             </div>
