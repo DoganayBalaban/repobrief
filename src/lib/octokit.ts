@@ -3,10 +3,12 @@ import { auth } from "@/auth";
 
 export async function getOctokit() {
   const session = await auth();
+  const accessToken = (session as { accessToken?: string } | null)
+    ?.accessToken;
 
-  if (!session?.accessToken) {
+  if (!accessToken) {
     throw new Error("Not authenticated");
   }
 
-  return new Octokit({ auth: session.accessToken });
+  return new Octokit({ auth: accessToken });
 }

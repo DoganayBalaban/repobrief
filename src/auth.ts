@@ -11,7 +11,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     session({ session, token }) {
-      session.accessToken = token.accessToken as string | undefined;
+      Object.assign(session, {
+        accessToken: token.accessToken as string | undefined,
+      });
       return session;
     },
   },
