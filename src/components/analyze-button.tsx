@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { parseAnalysisXml, type AnalysisResult } from "@/lib/analyze";
+import { MermaidDiagram } from "@/components/mermaid-diagram";
 
 interface Props {
   owner: string;
@@ -219,9 +220,7 @@ export function AnalyzeButton({ owner, repo }: Props) {
                 <CardTitle className="text-sm">Architecture</CardTitle>
               </CardHeader>
               <CardContent>
-                <pre className="rounded-lg bg-muted p-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap">
-                  {result.architecture}
-                </pre>
+                <MermaidDiagram chart={result.architecture} />
               </CardContent>
             </Card>
           )}
