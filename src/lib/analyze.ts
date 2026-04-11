@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Octokit } from "octokit";
-import { fetchFileTree } from "./file-tree";
 import { fetchKeyFileContents } from "./file-content";
+import { fetchFileTree } from "./file-tree";
 import { buildPrompt } from "./prompt";
 
 export interface AnalysisResult {
@@ -10,7 +10,7 @@ export interface AnalysisResult {
   file_map: string;
   onboarding: string;
   tech_stack: string; // raw JSON string
-  raw: string;        // full Claude response for debugging
+  raw: string; // full Claude response for debugging
 }
 
 const client = new Anthropic();
@@ -20,10 +20,21 @@ function extractXml(tag: string, text: string): string {
   return match ? match[1].trim() : "";
 }
 
+export function parseAnalysisXml(raw: string): AnalysisResult {
+  return {
+    description: extractXml("description", raw),
+    architecture: extractXml("architecture", raw),
+    file_map: extractXml("file_map", raw),
+    onboarding: extractXml("onboarding", raw),
+    tech_stack: extractXml("tech_stack", raw),
+    raw,
+  };
+}
+
 export async function analyzeRepo(
   octokit: Octokit,
   owner: string,
-  repo: string
+  repo: string,
 ): Promise<AnalysisResult> {
   // 1. Fetch repo metadata
   const { data: repoData } = await octokit.rest.repos.get({ owner, repo });
@@ -32,7 +43,12 @@ export async function analyzeRepo(
   const fileTree = await fetchFileTree(octokit, owner, repo);
 
   // 3. Fetch key file contents
-  const fileContents = await fetchKeyFileContents(octokit, owner, repo, fileTree);
+  const fileContents = await fetchKeyFileContents(
+    octokit,
+    owner,
+    repo,
+    fileTree,
+  );
 
   // 4. Build prompt
   const { system, user } = buildPrompt(
@@ -45,7 +61,7 @@ export async function analyzeRepo(
       default_branch: repoData.default_branch,
     },
     fileTree,
-    fileContents
+    fileContents,
   );
 
   // 5. Call Claude API
@@ -59,10 +75,14 @@ export async function analyzeRepo(
     });
   } catch (error) {
     if (error instanceof Anthropic.RateLimitError) {
-      throw new Error("Claude API rate limit reached. Please try again in a moment.");
+      throw new Error(
+        "Claude API rate limit reached. Please try again in a moment.",
+      );
     }
     if (error instanceof Anthropic.BadRequestError) {
-      throw new Error("Repository content is too large to analyze. Try a smaller repository.");
+      throw new Error(
+        "Repository content is too large to analyze. Try a smaller repository.",
+      );
     }
     throw error;
   }
@@ -73,13 +93,5 @@ export async function analyzeRepo(
     .map((b) => b.text)
     .join("");
 
-  // 7. Parse XML sections
-  return {
-    description: extractXml("description", raw),
-    architecture: extractXml("architecture", raw),
-    file_map: extractXml("file_map", raw),
-    onboarding: extractXml("onboarding", raw),
-    tech_stack: extractXml("tech_stack", raw),
-    raw,
-  };
+  return parseAnalysisXml(raw);
 }

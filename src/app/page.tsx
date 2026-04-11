@@ -102,7 +102,7 @@ export default async function LandingPage() {
           </p>
 
           {/* CTA */}
-          <div className="anim-4 flex flex-row items-center justify-center gap-4">
+          <div className="anim-4 flex flex-col items-center justify-center gap-4">
             <Link
               href="/auth"
               className="group flex items-center  gap-2.5 bg-lime-400 text-zinc-950 font-mono font-bold text-sm px-7 py-3.5 rounded-sm hover:bg-lime-300 transition-colors"

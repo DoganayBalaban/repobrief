@@ -35,7 +35,7 @@ export async function analyzeRepoStream(
   );
 
   // 5. Start streaming Claude API call
-  let stream: Anthropic.Stream<Anthropic.RawMessageStreamEvent>;
+  let stream;
   try {
     stream = client.messages.stream({
       model: "claude-sonnet-4-6",
