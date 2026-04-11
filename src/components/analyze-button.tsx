@@ -28,6 +28,20 @@ function parseTechStack(raw: string): TechItem[] {
   }
 }
 
+const CATEGORY_STYLES: Record<string, string> = {
+  language:  "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
+  framework: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
+  database:  "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
+  devops:    "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
+  auth:      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300",
+  testing:   "bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300",
+  other:     "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+};
+
+function categoryStyle(category: string): string {
+  return CATEGORY_STYLES[category.toLowerCase()] ?? CATEGORY_STYLES["other"];
+}
+
 export function AnalyzeButton({ owner, repo }: Props) {
   const [isPending, startTransition] = useTransition();
   const [streamText, setStreamText] = useState("");
@@ -204,10 +218,15 @@ export function AnalyzeButton({ owner, repo }: Props) {
               <CardContent>
                 <div className="flex flex-wrap gap-2">
                   {parseTechStack(result.tech_stack).map((item, i) => (
-                    <Badge key={i} variant="secondary">
+                    <span
+                      key={i}
+                      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${categoryStyle(item.category)}`}
+                    >
                       {item.name}
-                      {item.version ? ` ${item.version}` : ""}
-                    </Badge>
+                      {item.version ? (
+                        <span className="opacity-60">{item.version}</span>
+                      ) : null}
+                    </span>
                   ))}
                 </div>
               </CardContent>
