@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { parseAnalysisXml, type AnalysisResult } from "@/lib/analyze";
+import { parseAnalysisXml, type AnalysisResult } from "@/lib/parse-xml";
 import { MermaidDiagram } from "@/components/mermaid-diagram";
 
 interface Props {
@@ -78,6 +78,14 @@ export function AnalyzeButton({ owner, repo }: Props) {
       }
 
       if (!res.ok) {
+        if (res.status === 401) {
+          setError("Session expired. Please sign in again.");
+          return;
+        }
+        if (res.status === 429) {
+          setError("Claude API rate limit reached. Please wait a moment and try again.");
+          return;
+        }
         const data: unknown = await res.json().catch(() => ({}));
         const message =
           typeof data === "object" &&
@@ -85,7 +93,7 @@ export function AnalyzeButton({ owner, repo }: Props) {
           "error" in data &&
           typeof (data as { error: unknown }).error === "string"
             ? (data as { error: string }).error
-            : "Request failed.";
+            : `Analysis failed (${res.status}). Please try again.`;
         setError(message);
         return;
       }
@@ -209,7 +217,9 @@ export function AnalyzeButton({ owner, repo }: Props) {
       </div>
 
       {error && (
-        <p className="text-sm text-destructive">{error}</p>
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
       )}
 
       {showStreaming && (

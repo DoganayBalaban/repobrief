@@ -63,15 +63,24 @@ export default async function RepoPage({ params }: Props) {
           <CardDescription>{files.length} files indexed</CardDescription>
         </CardHeader>
         <CardContent>
-          <ul className="max-h-96 overflow-y-auto flex flex-col gap-1">
-            {files.map((f) => (
-              <li
-                key={f.path}
-                className="font-mono text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {f.path}
-              </li>
-            ))}
+          <ul className="max-h-96 overflow-y-auto flex flex-col gap-0.5 font-mono text-xs">
+            {files.map((f) => {
+              const parts = f.path.split("/");
+              const depth = parts.length - 1;
+              const name = parts[parts.length - 1];
+              const dir = parts.slice(0, -1).join("/");
+              return (
+                <li
+                  key={f.path}
+                  className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                  style={{ paddingLeft: `${depth * 12}px` }}
+                >
+                  <span className="opacity-40 select-none">{depth > 0 ? "└ " : ""}</span>
+                  {depth === 0 && dir === "" ? null : null}
+                  <span className="truncate">{name}</span>
+                </li>
+              );
+            })}
           </ul>
         </CardContent>
       </Card>

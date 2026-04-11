@@ -3,54 +3,22 @@ import type { Octokit } from "octokit";
 import { fetchKeyFileContents } from "./file-content";
 import { fetchFileTree } from "./file-tree";
 import { buildPrompt } from "./prompt";
+import { parseAnalysisXml } from "./parse-xml";
 
-export interface AnalysisResult {
-  description: string;
-  architecture: string;
-  file_map: string;
-  onboarding: string;
-  tech_stack: string; // raw JSON string
-  raw: string; // full Claude response for debugging
-}
+export type { AnalysisResult } from "./parse-xml";
+export { parseAnalysisXml } from "./parse-xml";
 
 const client = new Anthropic();
-
-function extractXml(tag: string, text: string): string {
-  const match = text.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
-  return match ? match[1].trim() : "";
-}
-
-export function parseAnalysisXml(raw: string): AnalysisResult {
-  return {
-    description: extractXml("description", raw),
-    architecture: extractXml("architecture", raw),
-    file_map: extractXml("file_map", raw),
-    onboarding: extractXml("onboarding", raw),
-    tech_stack: extractXml("tech_stack", raw),
-    raw,
-  };
-}
 
 export async function analyzeRepo(
   octokit: Octokit,
   owner: string,
   repo: string,
-): Promise<AnalysisResult> {
-  // 1. Fetch repo metadata
+): Promise<ReturnType<typeof parseAnalysisXml>> {
   const { data: repoData } = await octokit.rest.repos.get({ owner, repo });
-
-  // 2. Fetch file tree
   const fileTree = await fetchFileTree(octokit, owner, repo);
+  const fileContents = await fetchKeyFileContents(octokit, owner, repo, fileTree);
 
-  // 3. Fetch key file contents
-  const fileContents = await fetchKeyFileContents(
-    octokit,
-    owner,
-    repo,
-    fileTree,
-  );
-
-  // 4. Build prompt
   const { system, user } = buildPrompt(
     {
       owner,
@@ -64,7 +32,6 @@ export async function analyzeRepo(
     fileContents,
   );
 
-  // 5. Call Claude API
   let response: Anthropic.Message;
   try {
     response = await client.messages.create({
@@ -75,19 +42,14 @@ export async function analyzeRepo(
     });
   } catch (error) {
     if (error instanceof Anthropic.RateLimitError) {
-      throw new Error(
-        "Claude API rate limit reached. Please try again in a moment.",
-      );
+      throw new Error("Claude API rate limit reached. Please try again in a moment.");
     }
     if (error instanceof Anthropic.BadRequestError) {
-      throw new Error(
-        "Repository content is too large to analyze. Try a smaller repository.",
-      );
+      throw new Error("Repository content is too large to analyze. Try a smaller repository.");
     }
     throw error;
   }
 
-  // 6. Extract text from response
   const raw = response.content
     .filter((b): b is Anthropic.TextBlock => b.type === "text")
     .map((b) => b.text)
