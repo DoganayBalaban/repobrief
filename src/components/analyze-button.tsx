@@ -3,7 +3,6 @@
 import { useTransition, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { parseAnalysisXml, type AnalysisResult } from "@/lib/parse-xml";
 import { MermaidDiagram } from "@/components/mermaid-diagram";
