@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { parseAnalysisXml, type AnalysisResult } from "@/lib/analyze";
+import { parseAnalysisXml, type AnalysisResult } from "@/lib/parse-xml";
+import { MermaidDiagram } from "@/components/mermaid-diagram";
 
 interface Props {
   owner: string;
@@ -25,6 +26,20 @@ function parseTechStack(raw: string): TechItem[] {
   } catch {
     return [];
   }
+}
+
+const CATEGORY_STYLES: Record<string, string> = {
+  language:  "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
+  framework: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
+  database:  "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
+  devops:    "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
+  auth:      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300",
+  testing:   "bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300",
+  other:     "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+};
+
+function categoryStyle(category: string): string {
+  return CATEGORY_STYLES[category.toLowerCase()] ?? CATEGORY_STYLES["other"];
 }
 
 export function AnalyzeButton({ owner, repo }: Props) {
@@ -63,6 +78,14 @@ export function AnalyzeButton({ owner, repo }: Props) {
       }
 
       if (!res.ok) {
+        if (res.status === 401) {
+          setError("Session expired. Please sign in again.");
+          return;
+        }
+        if (res.status === 429) {
+          setError("Claude API rate limit reached. Please wait a moment and try again.");
+          return;
+        }
         const data: unknown = await res.json().catch(() => ({}));
         const message =
           typeof data === "object" &&
@@ -70,7 +93,7 @@ export function AnalyzeButton({ owner, repo }: Props) {
           "error" in data &&
           typeof (data as { error: unknown }).error === "string"
             ? (data as { error: string }).error
-            : "Request failed.";
+            : `Analysis failed (${res.status}). Please try again.`;
         setError(message);
         return;
       }
@@ -116,6 +139,53 @@ export function AnalyzeButton({ owner, repo }: Props) {
   const showStreaming =
     isPending || (streamText.length > 0 && result === null && !error);
 
+  const [copied, setCopied] = useState(false);
+
+  function handleExport(r: AnalysisResult, o: string, rep: string) {
+    const lines: string[] = [
+      `# ${o}/${rep} — RepoBrief Analysis`,
+      "",
+    ];
+
+    if (r.description) {
+      lines.push("## Description", "", r.description, "");
+    }
+    if (r.architecture) {
+      lines.push("## Architecture", "", "```mermaid", r.architecture, "```", "");
+    }
+    if (r.file_map) {
+      lines.push("## File Map", "", r.file_map, "");
+    }
+    if (r.onboarding) {
+      lines.push("## Getting Started", "", r.onboarding, "");
+    }
+    if (r.tech_stack) {
+      try {
+        const items = JSON.parse(r.tech_stack) as TechItem[];
+        if (items.length > 0) {
+          lines.push("## Tech Stack", "");
+          lines.push(...items.map((t) => `- **${t.name}**${t.version ? ` ${t.version}` : ""} _(${t.category})_`));
+          lines.push("");
+        }
+      } catch { /* skip */ }
+    }
+
+    const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${o}-${rep}-repobrief.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleShare() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
@@ -134,10 +204,22 @@ export function AnalyzeButton({ owner, repo }: Props) {
             Cancel
           </Button>
         )}
+        {result && !isPending && (
+          <>
+            <Button variant="outline" size="sm" onClick={handleShare}>
+              {copied ? "Copied!" : "Share"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExport(result, owner, repo)}>
+              Export MD
+            </Button>
+          </>
+        )}
       </div>
 
       {error && (
-        <p className="text-sm text-destructive">{error}</p>
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
       )}
 
       {showStreaming && (
@@ -203,10 +285,15 @@ export function AnalyzeButton({ owner, repo }: Props) {
               <CardContent>
                 <div className="flex flex-wrap gap-2">
                   {parseTechStack(result.tech_stack).map((item, i) => (
-                    <Badge key={i} variant="secondary">
+                    <span
+                      key={i}
+                      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${categoryStyle(item.category)}`}
+                    >
                       {item.name}
-                      {item.version ? ` ${item.version}` : ""}
-                    </Badge>
+                      {item.version ? (
+                        <span className="opacity-60">{item.version}</span>
+                      ) : null}
+                    </span>
                   ))}
                 </div>
               </CardContent>
@@ -219,9 +306,7 @@ export function AnalyzeButton({ owner, repo }: Props) {
                 <CardTitle className="text-sm">Architecture</CardTitle>
               </CardHeader>
               <CardContent>
-                <pre className="rounded-lg bg-muted p-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap">
-                  {result.architecture}
-                </pre>
+                <MermaidDiagram chart={result.architecture} />
               </CardContent>
             </Card>
           )}
