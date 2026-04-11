@@ -131,6 +131,53 @@ export function AnalyzeButton({ owner, repo }: Props) {
   const showStreaming =
     isPending || (streamText.length > 0 && result === null && !error);
 
+  const [copied, setCopied] = useState(false);
+
+  function handleExport(r: AnalysisResult, o: string, rep: string) {
+    const lines: string[] = [
+      `# ${o}/${rep} — RepoBrief Analysis`,
+      "",
+    ];
+
+    if (r.description) {
+      lines.push("## Description", "", r.description, "");
+    }
+    if (r.architecture) {
+      lines.push("## Architecture", "", "```mermaid", r.architecture, "```", "");
+    }
+    if (r.file_map) {
+      lines.push("## File Map", "", r.file_map, "");
+    }
+    if (r.onboarding) {
+      lines.push("## Getting Started", "", r.onboarding, "");
+    }
+    if (r.tech_stack) {
+      try {
+        const items = JSON.parse(r.tech_stack) as TechItem[];
+        if (items.length > 0) {
+          lines.push("## Tech Stack", "");
+          lines.push(...items.map((t) => `- **${t.name}**${t.version ? ` ${t.version}` : ""} _(${t.category})_`));
+          lines.push("");
+        }
+      } catch { /* skip */ }
+    }
+
+    const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${o}-${rep}-repobrief.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleShare() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
@@ -148,6 +195,16 @@ export function AnalyzeButton({ owner, repo }: Props) {
           <Button variant="ghost" size="sm" onClick={handleCancel} className="text-muted-foreground">
             Cancel
           </Button>
+        )}
+        {result && !isPending && (
+          <>
+            <Button variant="outline" size="sm" onClick={handleShare}>
+              {copied ? "Copied!" : "Share"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExport(result, owner, repo)}>
+              Export MD
+            </Button>
+          </>
         )}
       </div>
 
