@@ -179,7 +179,8 @@ export function AnalyzeButton({ owner, repo }: Props) {
   }
 
   function handleShare() {
-    navigator.clipboard.writeText(window.location.href).then(() => {
+    const url = `${window.location.origin}/analysis/${owner}/${repo}`;
+    navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
