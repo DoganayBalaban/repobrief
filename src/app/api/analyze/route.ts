@@ -2,6 +2,28 @@ import { analyzeRepoStream } from "@/lib/analyze-stream";
 import { getOctokit } from "@/lib/octokit";
 import { db } from "@/lib/db";
 import { parseAnalysisXml } from "@/lib/parse-xml";
+import type { AnalysisResult } from "@/lib/parse-xml";
+
+const CACHE_MAX_AGE_DAYS = 7;
+
+function isCacheStale(createdAt: Date): boolean {
+  const age = Date.now() - createdAt.getTime();
+  return age > CACHE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+}
+
+function resultToXml(r: AnalysisResult): string {
+  const sections = [
+    ["description", r.description],
+    ["tech_stack", r.tech_stack],
+    ["architecture", r.architecture],
+    ["file_map", r.file_map],
+    ["onboarding", r.onboarding],
+  ] as const;
+  return sections
+    .filter(([, v]) => v)
+    .map(([tag, v]) => `<${tag}>${v}</${tag}>`)
+    .join("\n");
+}
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -36,6 +58,30 @@ export async function POST(request: Request) {
     });
     const commitSha = commits[0]?.sha ?? "unknown";
 
+    // Cache hit check: same commit SHA + not stale
+    if (commitSha !== "unknown") {
+      const cached = await db.analysis.findUnique({
+        where: { owner_repo_commitSha: { owner, repo, commitSha } },
+      });
+
+      if (cached && !isCacheStale(cached.createdAt)) {
+        const result = cached.result as unknown as AnalysisResult;
+        const xml = resultToXml(result);
+        const encoder = new TextEncoder();
+
+        return new Response(encoder.encode(xml), {
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "no-store",
+            "X-Cache": "HIT",
+            "X-Cache-Age": String(Math.floor((Date.now() - cached.createdAt.getTime()) / 1000)),
+            "X-Commit-SHA": commitSha.slice(0, 7),
+          },
+        });
+      }
+    }
+
+    // Cache miss: run Claude analysis
     const sourceStream = await analyzeRepoStream(octokit, owner, repo);
 
     // Wrap the stream: accumulate full text, then save to DB when done
@@ -90,6 +136,8 @@ export async function POST(request: Request) {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "no-store",
+        "X-Cache": "MISS",
+        "X-Commit-SHA": commitSha.slice(0, 7),
       },
     });
   } catch (err) {
