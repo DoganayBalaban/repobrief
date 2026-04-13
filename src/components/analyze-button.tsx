@@ -84,7 +84,12 @@ export function AnalyzeButton({ owner, repo }: Props) {
           return;
         }
         if (res.status === 429) {
-          setError("Claude API rate limit reached. Please wait a moment and try again.");
+          const data: unknown = await res.json().catch(() => ({}));
+          const msg =
+            typeof data === "object" && data !== null && "error" in data && typeof (data as { error: unknown }).error === "string"
+              ? (data as { error: string }).error
+              : "Rate limit reached. Please try again later.";
+          setError(msg);
           return;
         }
         const data: unknown = await res.json().catch(() => ({}));

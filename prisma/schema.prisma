@@ -13,9 +13,11 @@ model Analysis {
   repo      String
   commitSha String
   result    Json
+  userId    String?
   createdAt DateTime @default(now())
   viewCount Int      @default(0)
 
   @@unique([owner, repo, commitSha])
   @@index([owner, repo])
+  @@index([userId, createdAt])
 }

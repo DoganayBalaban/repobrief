@@ -3,8 +3,10 @@ import { getOctokit } from "@/lib/octokit";
 import { db } from "@/lib/db";
 import { parseAnalysisXml } from "@/lib/parse-xml";
 import type { AnalysisResult } from "@/lib/parse-xml";
+import { auth } from "@/auth";
 
 const CACHE_MAX_AGE_DAYS = 7;
+const FREE_MONTHLY_LIMIT = 5;
 
 function isCacheStale(createdAt: Date): boolean {
   const age = Date.now() - createdAt.getTime();
@@ -48,7 +50,33 @@ export async function POST(request: Request) {
   }
 
   try {
+    const session = await auth();
+    const userId = session?.user?.email ?? session?.user?.name ?? null;
+
     const octokit = await getOctokit();
+
+    // Rate limit check: count analyses this month for this user
+    if (userId) {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const usedThisMonth = await db.analysis.count({
+        where: { userId, createdAt: { gte: monthStart } },
+      });
+
+      if (usedThisMonth >= FREE_MONTHLY_LIMIT) {
+        return Response.json(
+          { error: "Free plan limit reached (5 analyses/month). Upgrade to Pro for unlimited access." },
+          {
+            status: 429,
+            headers: {
+              "X-RateLimit-Limit": String(FREE_MONTHLY_LIMIT),
+              "X-RateLimit-Remaining": "0",
+              "X-RateLimit-Reset": new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString(),
+            },
+          }
+        );
+      }
+    }
 
     // Fetch latest commit SHA for cache keying
     const { data: commits } = await octokit.rest.repos.listCommits({
@@ -76,6 +104,7 @@ export async function POST(request: Request) {
             "X-Cache": "HIT",
             "X-Cache-Age": String(Math.floor((Date.now() - cached.createdAt.getTime()) / 1000)),
             "X-Commit-SHA": commitSha.slice(0, 7),
+            // Cache hits don't consume quota — no rate limit headers needed
           },
         });
       }
@@ -115,6 +144,7 @@ export async function POST(request: Request) {
                   repo,
                   commitSha,
                   result: parsed as object,
+                  userId,
                 },
                 update: {
                   result: parsed as object,
