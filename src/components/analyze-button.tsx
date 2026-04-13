@@ -46,6 +46,7 @@ export function AnalyzeButton({ owner, repo }: Props) {
   const [streamText, setStreamText] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cacheStatus, setCacheStatus] = useState<{ hit: boolean; commitSha: string; age: number } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   function handleCancel() {
@@ -56,6 +57,7 @@ export function AnalyzeButton({ owner, repo }: Props) {
     setError(null);
     setResult(null);
     setStreamText("");
+    setCacheStatus(null);
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -97,6 +99,22 @@ export function AnalyzeButton({ owner, repo }: Props) {
         return;
       }
 
+      // Read cache headers
+      const xCache = res.headers.get("X-Cache");
+      const xCommitSha = res.headers.get("X-Commit-SHA") ?? "";
+      const xCacheAge = parseInt(res.headers.get("X-Cache-Age") ?? "0", 10);
+      const isHit = xCache === "HIT";
+
+      setCacheStatus({ hit: isHit, commitSha: xCommitSha, age: xCacheAge });
+
+      // Cache HIT: read body at once, no streaming
+      if (isHit) {
+        const text = await res.text();
+        setResult(parseAnalysisXml(text));
+        return;
+      }
+
+      // Cache MISS: stream from Claude
       const stream = res.body;
       if (!stream) {
         setError("No response stream.");
@@ -264,6 +282,35 @@ export function AnalyzeButton({ owner, repo }: Props) {
 
       {result && (
         <div className="flex flex-col gap-6">
+          {cacheStatus && (
+            <div className="flex items-center gap-3">
+              {cacheStatus.hit ? (
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-lime-500/20 bg-lime-500/5 px-2.5 py-1 text-xs font-mono text-lime-400">
+                  ⚡ Cached
+                  {cacheStatus.commitSha && (
+                    <span className="opacity-50">· {cacheStatus.commitSha}</span>
+                  )}
+                  {cacheStatus.age > 0 && (
+                    <span className="opacity-50">
+                      · {cacheStatus.age < 3600
+                        ? `${Math.floor(cacheStatus.age / 60)}m ago`
+                        : cacheStatus.age < 86400
+                          ? `${Math.floor(cacheStatus.age / 3600)}h ago`
+                          : `${Math.floor(cacheStatus.age / 86400)}d ago`}
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-blue-500/20 bg-blue-500/5 px-2.5 py-1 text-xs font-mono text-blue-400">
+                  ✦ Fresh analysis
+                  {cacheStatus.commitSha && (
+                    <span className="opacity-50">· {cacheStatus.commitSha}</span>
+                  )}
+                </span>
+              )}
+            </div>
+          )}
+
           {result.description && (
             <Card>
               <CardHeader>
