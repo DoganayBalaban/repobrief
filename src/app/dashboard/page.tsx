@@ -40,7 +40,9 @@ const LANG_COLORS: Record<string, string> = {
 
 export default async function DashboardPage() {
   const session = await auth();
-  const userId = session?.user?.email ?? session?.user?.name ?? null;
+  const userId = (session as { githubId?: string } | null)?.githubId
+    ?? session?.user?.email
+    ?? null;
 
   const octokit = await getOctokit();
   const { data } = await octokit.rest.repos.listForAuthenticatedUser({

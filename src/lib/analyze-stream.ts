@@ -58,6 +58,7 @@ export async function analyzeRepoStream(
 
   return new ReadableStream<Uint8Array>({
     async start(controller) {
+      let errored = false;
       try {
         for await (const event of stream) {
           if (
@@ -68,6 +69,7 @@ export async function analyzeRepoStream(
           }
         }
       } catch (error) {
+        errored = true;
         if (error instanceof Anthropic.RateLimitError) {
           controller.error(new Error("Claude API rate limit reached. Please try again in a moment."));
         } else if (error instanceof Anthropic.BadRequestError) {
@@ -76,7 +78,7 @@ export async function analyzeRepoStream(
           controller.error(error);
         }
       } finally {
-        controller.close();
+        if (!errored) controller.close();
       }
     },
     cancel() {
