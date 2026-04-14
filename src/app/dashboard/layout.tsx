@@ -84,6 +84,9 @@ export default async function DashboardLayout({
                 <Link href="/dashboard" className="nav-link active">
                   repositories
                 </Link>
+                <Link href="/dashboard/analyses" className="nav-link">
+                  my analyses
+                </Link>
               </div>
             </div>
 
