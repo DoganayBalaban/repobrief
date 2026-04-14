@@ -227,7 +227,7 @@ export function AnalyzeButton({ owner, repo }: Props) {
             Cancel
           </Button>
         )}
-        {result && !isPending && (
+        {result && !isPending && !error && (
           <>
             <Button variant="outline" size="sm" onClick={handleShare}>
               {copied ? "Copied!" : "Share"}

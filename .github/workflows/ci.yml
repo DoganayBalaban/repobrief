@@ -32,4 +32,4 @@ jobs:
           AUTH_GITHUB_ID: ${{ secrets.AUTH_GITHUB_ID }}
           AUTH_GITHUB_SECRET: ${{ secrets.AUTH_GITHUB_SECRET }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          NEXTAUTH_URL: http://localhost:3000
+          DATABASE_URL: postgresql://mock:mock@localhost/mock
