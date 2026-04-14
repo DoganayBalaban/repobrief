@@ -149,6 +149,7 @@ export async function POST(request: Request) {
                 update: {
                   result: parsed as object,
                   viewCount: 0,
+                  ...(userId ? { userId } : {}),
                 },
               })
               .catch(() => {
