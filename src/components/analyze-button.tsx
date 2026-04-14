@@ -53,7 +53,7 @@ export function AnalyzeButton({ owner, repo }: Props) {
     abortRef.current?.abort();
   }
 
-  function handleAnalyze() {
+  function handleAnalyze(force = false) {
     setError(null);
     setResult(null);
     setStreamText("");
@@ -69,7 +69,7 @@ export function AnalyzeButton({ owner, repo }: Props) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ owner, repo }),
+          body: JSON.stringify({ owner, repo, ...(force ? { force: true } : {}) }),
           signal: controller.signal,
         });
       } catch (err) {
@@ -212,7 +212,7 @@ export function AnalyzeButton({ owner, repo }: Props) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
-        <Button onClick={handleAnalyze} disabled={isPending} className="w-fit">
+        <Button onClick={() => handleAnalyze()} disabled={isPending} className="w-fit">
           {isPending ? (
             <span className="flex items-center gap-2">
               <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -235,6 +235,11 @@ export function AnalyzeButton({ owner, repo }: Props) {
             <Button variant="outline" size="sm" onClick={() => handleExport(result, owner, repo)}>
               Export MD
             </Button>
+            {cacheStatus?.hit && (
+              <Button variant="outline" size="sm" onClick={() => handleAnalyze(true)}>
+                Re-analyze
+              </Button>
+            )}
           </>
         )}
       </div>
