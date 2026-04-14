@@ -49,6 +49,8 @@ export async function POST(request: Request) {
     );
   }
 
+  const force = (body as { force?: unknown }).force === true;
+
   try {
     const session = await auth();
     // Use stable GitHub numeric ID — email/name are not guaranteed unique
@@ -89,8 +91,8 @@ export async function POST(request: Request) {
     });
     const commitSha = commits[0]?.sha ?? "unknown";
 
-    // Cache hit check: same commit SHA + not stale
-    if (commitSha !== "unknown") {
+    // Cache hit check: same commit SHA + not stale (skip if force refresh)
+    if (commitSha !== "unknown" && !force) {
       const cached = await db.analysis.findUnique({
         where: { owner_repo_commitSha: { owner, repo, commitSha } },
       });
