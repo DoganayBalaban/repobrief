@@ -5,7 +5,9 @@ const FREE_MONTHLY_LIMIT = 5;
 
 export async function GET() {
   const session = await auth();
-  const userId = session?.user?.email ?? session?.user?.name ?? null;
+  const userId = (session as { githubId?: string } | null)?.githubId
+    ?? session?.user?.email
+    ?? null;
 
   if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });

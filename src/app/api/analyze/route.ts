@@ -51,7 +51,10 @@ export async function POST(request: Request) {
 
   try {
     const session = await auth();
-    const userId = session?.user?.email ?? session?.user?.name ?? null;
+    // Use stable GitHub numeric ID — email/name are not guaranteed unique
+    const userId = (session as { githubId?: string } | null)?.githubId
+      ?? session?.user?.email
+      ?? null;
 
     const octokit = await getOctokit();
 
@@ -116,6 +119,7 @@ export async function POST(request: Request) {
     // Wrap the stream: accumulate full text, then save to DB when done
     const decoder = new TextDecoder();
     let accumulated = "";
+    let streamComplete = false;
 
     const wrappedStream = new ReadableStream<Uint8Array>({
       async start(controller) {
@@ -123,7 +127,10 @@ export async function POST(request: Request) {
         try {
           while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done) {
+              streamComplete = true;
+              break;
+            }
             if (value) {
               accumulated += decoder.decode(value, { stream: true });
               controller.enqueue(value);
@@ -133,8 +140,8 @@ export async function POST(request: Request) {
         } finally {
           controller.close();
 
-          // Fire-and-forget: save analysis to DB
-          if (accumulated && commitSha !== "unknown") {
+          // Only save to DB if stream completed fully — never write partial XML
+          if (streamComplete && accumulated && commitSha !== "unknown") {
             const parsed = parseAnalysisXml(accumulated);
             db.analysis
               .upsert({
