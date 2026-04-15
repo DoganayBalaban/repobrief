@@ -1,12 +1,15 @@
 import { analyzeRepoStream } from "@/lib/analyze-stream";
-import { getOctokit } from "@/lib/octokit";
+import { getOctokit, getPublicOctokit } from "@/lib/octokit";
 import { db } from "@/lib/db";
 import { parseAnalysisXml } from "@/lib/parse-xml";
 import type { AnalysisResult } from "@/lib/parse-xml";
+import { hashIp } from "@/lib/ip-hash";
 import { auth } from "@/auth";
+import type { Octokit } from "octokit";
 
 const CACHE_MAX_AGE_DAYS = 7;
 const FREE_MONTHLY_LIMIT = 5;
+const ANON_DAILY_LIMIT = 2;
 
 function isCacheStale(createdAt: Date): boolean {
   const age = Date.now() - createdAt.getTime();
@@ -53,15 +56,17 @@ export async function POST(request: Request) {
 
   try {
     const session = await auth();
-    // Use stable GitHub numeric ID — email/name are not guaranteed unique
     const userId = (session as { githubId?: string } | null)?.githubId
       ?? session?.user?.email
       ?? null;
 
-    const octokit = await getOctokit();
+    let octokit: Octokit;
+    let ipHash: string | null = null;
 
-    // Rate limit check: count analyses this month for this user
     if (userId) {
+      octokit = await getOctokit();
+
+      // Rate limit check: count analyses this month for this user
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const usedThisMonth = await db.analysis.count({
@@ -80,6 +85,26 @@ export async function POST(request: Request) {
             },
           }
         );
+      }
+    } else {
+      // Anonymous path — unauthenticated Octokit for public repos
+      octokit = getPublicOctokit();
+
+      const rawIp = (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim();
+      if (rawIp) {
+        ipHash = await hashIp(rawIp);
+        const todayStart = new Date();
+        todayStart.setUTCHours(0, 0, 0, 0);
+        const usedToday = await db.analysis.count({
+          where: { ipHash, userId: null, createdAt: { gte: todayStart } },
+        });
+
+        if (usedToday >= ANON_DAILY_LIMIT) {
+          return Response.json(
+            { error: "Anonymous limit reached (2/day). Sign in for 5 free analyses/month." },
+            { status: 429 }
+          );
+        }
       }
     }
 
@@ -154,11 +179,13 @@ export async function POST(request: Request) {
                   commitSha,
                   result: parsed as object,
                   userId,
+                  ipHash,
                 },
                 update: {
                   result: parsed as object,
                   viewCount: 0,
                   ...(userId ? { userId } : {}),
+                  // do not overwrite ipHash on update
                 },
               })
               .catch(() => {
@@ -183,9 +210,6 @@ export async function POST(request: Request) {
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Analysis failed.";
-    if (message === "Not authenticated") {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
     return Response.json({ error: message }, { status: 500 });
   }
 }

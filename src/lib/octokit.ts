@@ -12,3 +12,8 @@ export async function getOctokit() {
 
   return new Octokit({ auth: accessToken });
 }
+
+/** Unauthenticated Octokit for public repos — 60 req/hour limit. */
+export function getPublicOctokit(): Octokit {
+  return new Octokit();
+}

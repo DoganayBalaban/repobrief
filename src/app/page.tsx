@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { RepoInputForm } from "@/components/repo-input-form";
 
 const GH_ICON = (
   <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current shrink-0" aria-hidden="true">
@@ -155,6 +156,13 @@ export default async function LandingPage() {
           </div>
 
           <p className="a4 mono text-xs text-zinc-700">no credit card · 5 free analyses/month</p>
+
+          <div className="a5" style={{ width: "100%", maxWidth: 480, marginTop: 16 }}>
+            <p style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, color: "#3f3f46", marginBottom: 8, textAlign: "center" }}>
+              — or try without signing in —
+            </p>
+            <RepoInputForm />
+          </div>
 
           {/* Terminal preview */}
           <div className="a5 w-full max-w-2xl mt-16">
