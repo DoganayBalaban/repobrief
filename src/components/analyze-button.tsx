@@ -10,6 +10,7 @@ import { MermaidDiagram } from "@/components/mermaid-diagram";
 interface Props {
   owner: string;
   repo: string;
+  isAnonymous?: boolean;
 }
 
 interface TechItem {
@@ -41,7 +42,7 @@ function categoryStyle(category: string): string {
   return CATEGORY_STYLES[category.toLowerCase()] ?? CATEGORY_STYLES["other"];
 }
 
-export function AnalyzeButton({ owner, repo }: Props) {
+export function AnalyzeButton({ owner, repo, isAnonymous = false }: Props) {
   const [isPending, startTransition] = useTransition();
   const [streamText, setStreamText] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -80,7 +81,9 @@ export function AnalyzeButton({ owner, repo }: Props) {
 
       if (!res.ok) {
         if (res.status === 401) {
-          setError("Session expired. Please sign in again.");
+          setError(isAnonymous
+            ? "Sign in to analyze private repositories."
+            : "Session expired. Please sign in again.");
           return;
         }
         if (res.status === 429) {
@@ -412,6 +415,33 @@ export function AnalyzeButton({ owner, repo }: Props) {
                 </p>
               </CardContent>
             </Card>
+          )}
+
+          {isAnonymous && (
+            <div style={{
+              border: "1px solid rgba(163,230,53,0.25)",
+              borderRadius: 4,
+              background: "rgba(163,230,53,0.04)",
+              padding: "20px 24px",
+            }}>
+              <p style={{ fontFamily: "ui-monospace,monospace", fontSize: 12, color: "#a3e635", marginBottom: 6 }}>
+                ◆ sign in to save &amp; share this analysis
+              </p>
+              <p style={{ fontFamily: "ui-monospace,monospace", fontSize: 11, color: "#52525b", marginBottom: 12, lineHeight: 1.6 }}>
+                Get a free account: 5 analyses/month, shareable links, export to Markdown.
+              </p>
+              <a
+                href="/auth"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  background: "#a3e635", color: "#000",
+                  fontFamily: "ui-monospace,monospace", fontSize: 11, fontWeight: 700,
+                  padding: "8px 16px", borderRadius: 3, textDecoration: "none",
+                }}
+              >
+                get started free →
+              </a>
+            </div>
           )}
         </div>
       )}
