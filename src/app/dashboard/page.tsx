@@ -2,6 +2,7 @@ import { getOctokit } from "@/lib/octokit";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { RepoList } from "@/components/repo-list";
+import { RepoInputForm } from "@/components/repo-input-form";
 
 const FREE_MONTHLY_LIMIT = 5;
 
@@ -83,6 +84,13 @@ export default async function DashboardPage() {
           <span className="quota-count">
             {used}<span className="quota-count-sub"> / {FREE_MONTHLY_LIMIT}</span>
           </span>
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <p style={{ fontFamily: "ui-monospace, monospace", fontSize: 10, color: "#52525b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+            Analyze any public repo
+          </p>
+          <RepoInputForm basePath="/dashboard" />
         </div>
 
         <RepoList repos={data.map(r => ({
