@@ -12,7 +12,7 @@ function parseGitHubInput(input: string): { owner: string; repo: string } | null
   return null;
 }
 
-export function RepoInputForm() {
+export function RepoInputForm({ basePath = "/public" }: { basePath?: string }) {
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
@@ -25,7 +25,7 @@ export function RepoInputForm() {
       return;
     }
     setError("");
-    router.push(`/public/${parsed.owner}/${parsed.repo}`);
+    router.push(`${basePath}/${parsed.owner}/${parsed.repo}`);
   }
 
   return (
