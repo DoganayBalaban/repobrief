@@ -12,7 +12,8 @@ function parseGitHubInput(input: string): { owner: string; repo: string } | null
   return null;
 }
 
-export function RepoInputForm({ basePath = "/public" }: { basePath?: string }) {
+export function RepoInputForm({ basePath = "/public", theme = "dark" }: { basePath?: string; theme?: "dark" | "light" }) {
+  const isLight = theme === "light";
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
@@ -40,30 +41,32 @@ export function RepoInputForm({ basePath = "/public" }: { basePath?: string }) {
           spellCheck={false}
           style={{
             flex: 1,
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.1)",
+            background: isLight ? "#ffffff" : "rgba(255,255,255,0.04)",
+            border: isLight ? "1px solid rgba(0,0,0,0.14)" : "1px solid rgba(255,255,255,0.1)",
             borderRight: "none",
-            borderRadius: "3px 0 0 3px",
-            padding: "10px 14px",
+            borderRadius: "8px 0 0 8px",
+            padding: "12px 16px",
             fontFamily: "ui-monospace, monospace",
-            fontSize: 12,
-            color: "#f4f4f5",
+            fontSize: 13,
+            color: isLight ? "#0f0e0d" : "#f4f4f5",
             outline: "none",
+            boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.06)" : "none",
           }}
         />
         <button
           type="submit"
           style={{
-            background: "#a3e635",
-            color: "#000",
+            background: isLight ? "#0f0e0d" : "#a3e635",
+            color: isLight ? "#fff" : "#000",
             border: "none",
-            borderRadius: "0 3px 3px 0",
-            padding: "10px 18px",
+            borderRadius: "0 8px 8px 0",
+            padding: "12px 20px",
             fontFamily: "ui-monospace, monospace",
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: 700,
             cursor: "pointer",
             whiteSpace: "nowrap",
+            boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
           }}
         >
           analyze →
