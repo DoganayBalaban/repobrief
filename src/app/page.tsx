@@ -1,831 +1,1869 @@
-import { auth } from "@/auth";
+"use client";
+
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { RepoInputForm } from "@/components/repo-input-form";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
-const GH_ICON = (
-  <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true" style={{ flexShrink: 0 }}>
-    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-  </svg>
-);
+type DiagramNode = {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  accent?: boolean;
+};
+type DiagramVariant = {
+  title: string;
+  nodes: DiagramNode[];
+  edges: [string, string][];
+  status: string;
+};
 
-export default async function LandingPage() {
-  const session = await auth();
-  if (session?.user) redirect("/dashboard");
+const DIAGRAM_VARIANTS: DiagramVariant[] = [
+  {
+    title: "nextjs-starter",
+    nodes: [
+      { id: "a", label: "app/", x: 250, y: 48, w: 110, h: 32, accent: true },
+      { id: "b", label: "api/", x: 90, y: 140, w: 90, h: 32 },
+      { id: "c", label: "components/", x: 220, y: 140, w: 140, h: 32 },
+      { id: "d", label: "lib/", x: 400, y: 140, w: 80, h: 32 },
+      { id: "e", label: "db.ts", x: 70, y: 240, w: 110, h: 32 },
+      { id: "f", label: "Button.tsx", x: 210, y: 240, w: 110, h: 32 },
+      { id: "g", label: "Card.tsx", x: 340, y: 240, w: 100, h: 32 },
+      { id: "h", label: "auth.ts", x: 460, y: 240, w: 100, h: 32 },
+      {
+        id: "i",
+        label: "PostgreSQL",
+        x: 50,
+        y: 340,
+        w: 150,
+        h: 32,
+        accent: true,
+      },
+      {
+        id: "j",
+        label: "Stripe API",
+        x: 420,
+        y: 340,
+        w: 130,
+        h: 32,
+        accent: true,
+      },
+    ],
+    edges: [
+      ["a", "b"],
+      ["a", "c"],
+      ["a", "d"],
+      ["b", "e"],
+      ["c", "f"],
+      ["c", "g"],
+      ["d", "h"],
+      ["e", "i"],
+      ["h", "j"],
+    ],
+    status: "Next.js 15 · TypeScript · Prisma · 47 files",
+  },
+  {
+    title: "fastapi-service",
+    nodes: [
+      { id: "a", label: "main.py", x: 220, y: 48, w: 120, h: 32, accent: true },
+      { id: "b", label: "routers/", x: 80, y: 140, w: 110, h: 32 },
+      { id: "c", label: "models/", x: 230, y: 140, w: 110, h: 32 },
+      { id: "d", label: "services/", x: 380, y: 140, w: 110, h: 32 },
+      { id: "e", label: "users.py", x: 30, y: 240, w: 110, h: 32 },
+      { id: "f", label: "orders.py", x: 160, y: 240, w: 110, h: 32 },
+      { id: "g", label: "user.py", x: 295, y: 240, w: 100, h: 32 },
+      { id: "h", label: "email.py", x: 420, y: 240, w: 110, h: 32 },
+      {
+        id: "i",
+        label: "PostgreSQL",
+        x: 120,
+        y: 340,
+        w: 140,
+        h: 32,
+        accent: true,
+      },
+      { id: "j", label: "Redis", x: 300, y: 340, w: 90, h: 32, accent: true },
+      {
+        id: "k",
+        label: "SendGrid",
+        x: 420,
+        y: 340,
+        w: 110,
+        h: 32,
+        accent: true,
+      },
+    ],
+    edges: [
+      ["a", "b"],
+      ["a", "c"],
+      ["a", "d"],
+      ["b", "e"],
+      ["b", "f"],
+      ["c", "g"],
+      ["d", "h"],
+      ["g", "i"],
+      ["f", "j"],
+      ["h", "k"],
+    ],
+    status: "FastAPI · Python 3.11 · SQLAlchemy · 38 files",
+  },
+  {
+    title: "react-go-monorepo",
+    nodes: [
+      {
+        id: "a",
+        label: "monorepo",
+        x: 220,
+        y: 48,
+        w: 120,
+        h: 32,
+        accent: true,
+      },
+      { id: "b", label: "apps/web", x: 100, y: 140, w: 110, h: 32 },
+      { id: "c", label: "apps/api", x: 240, y: 140, w: 110, h: 32 },
+      { id: "d", label: "packages/", x: 380, y: 140, w: 110, h: 32 },
+      { id: "e", label: "React", x: 60, y: 240, w: 80, h: 32 },
+      { id: "f", label: "Vite", x: 150, y: 240, w: 80, h: 32 },
+      { id: "g", label: "Go/Gin", x: 260, y: 240, w: 100, h: 32 },
+      { id: "h", label: "ui", x: 380, y: 240, w: 60, h: 32 },
+      { id: "i", label: "db", x: 450, y: 240, w: 60, h: 32 },
+      {
+        id: "j",
+        label: "Postgres",
+        x: 230,
+        y: 340,
+        w: 110,
+        h: 32,
+        accent: true,
+      },
+    ],
+    edges: [
+      ["a", "b"],
+      ["a", "c"],
+      ["a", "d"],
+      ["b", "e"],
+      ["b", "f"],
+      ["c", "g"],
+      ["d", "h"],
+      ["d", "i"],
+      ["g", "j"],
+      ["i", "j"],
+    ],
+    status: "Turborepo · Go 1.22 · React 19 · 62 files",
+  },
+];
+
+function AnimatedDiagram({
+  variant = 0,
+  live = true,
+}: {
+  variant?: number;
+  live?: boolean;
+}) {
+  const [step, setStep] = useState(0);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const data = DIAGRAM_VARIANTS[variant % DIAGRAM_VARIANTS.length];
+
+  useEffect(() => {
+    setStep(0);
+    const total = data.nodes.length + data.edges.length;
+    let i = 0;
+    const tick = () => {
+      i++;
+      setStep(i);
+      if (i < total + 6) timer.current = setTimeout(tick, 110);
+    };
+    timer.current = setTimeout(tick, 200);
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, [variant, data.nodes.length, data.edges.length]);
+
+  const edgePath = (aId: string, bId: string) => {
+    const na = data.nodes.find((n) => n.id === aId)!;
+    const nb = data.nodes.find((n) => n.id === bId)!;
+    const x1 = na.x + na.w / 2;
+    const y1 = na.y + na.h;
+    const x2 = nb.x + nb.w / 2;
+    const y2 = nb.y;
+    const midY = (y1 + y2) / 2;
+    return `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
+  };
+
+  const total = data.nodes.length + data.edges.length;
+  const shown = Math.min(step, total);
 
   return (
-    <>
+    <div className="diagram-card">
+      <div className="diagram-chrome">
+        <div className="diagram-chrome-dots">
+          <div className="dot" />
+          <div className="dot" />
+          <div className="dot" />
+        </div>
+        <div>~/{data.title} · architecture.mmd</div>
+        <div>
+          {String(shown).padStart(2, "0")}/{String(total).padStart(2, "0")}
+        </div>
+      </div>
+      <div className="diagram-body">
+        <svg
+          viewBox="0 0 600 400"
+          className="mermaid-svg"
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <defs>
+            <pattern
+              id={`dots-${variant}`}
+              width="20"
+              height="20"
+              patternUnits="userSpaceOnUse"
+            >
+              <circle
+                cx="1"
+                cy="1"
+                r="0.6"
+                fill="currentColor"
+                opacity="0.12"
+              />
+            </pattern>
+          </defs>
+          <rect width="600" height="400" fill={`url(#dots-${variant})`} />
+
+          {data.edges.map(([a, b], i) => {
+            const visible = step > data.nodes.length + i;
+            return (
+              <path
+                key={`e-${i}`}
+                d={edgePath(a, b)}
+                className="edge-line"
+                style={{
+                  strokeDasharray: 400,
+                  strokeDashoffset: visible ? 0 : 400,
+                  transition: "stroke-dashoffset 450ms ease",
+                }}
+              />
+            );
+          })}
+
+          {data.nodes.map((n, i) => {
+            const visible = step > i;
+            return (
+              <g
+                key={n.id}
+                style={{
+                  opacity: visible ? 1 : 0,
+                  transform: visible ? "translateY(0)" : "translateY(-4px)",
+                  transition: "opacity 300ms ease, transform 300ms ease",
+                }}
+              >
+                <rect
+                  x={n.x}
+                  y={n.y}
+                  width={n.w}
+                  height={n.h}
+                  className={`node-box ${n.accent ? "accent" : ""}`}
+                />
+                <text
+                  x={n.x + n.w / 2}
+                  y={n.y + n.h / 2 + 4}
+                  textAnchor="middle"
+                  className="node-text"
+                >
+                  {n.label}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+      <div className="diagram-status">
+        <div>
+          {live ? (
+            <>
+              <span className="blink-dot" />
+              analyzing
+            </>
+          ) : (
+            "ready"
+          )}
+        </div>
+        <div>{data.status}</div>
+      </div>
+    </div>
+  );
+}
+
+function parseGitHubInput(
+  input: string,
+): { owner: string; repo: string } | null {
+  const t = input.trim().replace(/\/$/, "");
+  const url = t.match(/github\.com\/([^/]+)\/([^/\s?#]+)/);
+  if (url) return { owner: url[1], repo: url[2] };
+  const short = t.match(/^([^/\s]+)\/([^/\s]+)$/);
+  if (short) return { owner: short[1], repo: short[2] };
+  return null;
+}
+
+type DemoRepo = {
+  name: string;
+  lang: string;
+  stars: string;
+  stack: Record<string, { n: string; v: string }[]>;
+  metrics: [string, string][];
+  summary: ReactNode;
+};
+
+const DEMO_REPOS: DemoRepo[] = [
+  {
+    name: "vercel/next.js",
+    lang: "TypeScript",
+    stars: "124k",
+    stack: {
+      FRAMEWORK: [
+        { n: "Next.js", v: "15.2.0" },
+        { n: "React", v: "19.0.1" },
+      ],
+      LANGUAGE: [
+        { n: "TypeScript", v: "5.4.5" },
+        { n: "Node.js", v: "20.x" },
+      ],
+      TOOLING: [
+        { n: "Turbopack", v: "2.0" },
+        { n: "SWC", v: "1.7" },
+        { n: "pnpm", v: "9.x" },
+      ],
+      TESTING: [
+        { n: "Jest", v: "29.7" },
+        { n: "Playwright", v: "1.45" },
+      ],
+    },
+    metrics: [
+      ["Files analyzed", "4,218"],
+      ["Primary language", "TypeScript (87%)"],
+      ["First commit", "Oct 2016"],
+      ["Contributors", "3,400+"],
+    ],
+    summary: (
+      <span>
+        <strong>Next.js</strong> is the React framework for production. The repo
+        is a monorepo with the core framework under <code>packages/next/</code>,
+        containing the router, bundler integration, and server runtime. It
+        exposes hooks into <strong>Turbopack</strong> for development and ships
+        with hybrid rendering: SSG, SSR, and RSC on the same tree. Start reading
+        at <code>packages/next/src/server/</code>.
+      </span>
+    ),
+  },
+  {
+    name: "tiangolo/fastapi",
+    lang: "Python",
+    stars: "79k",
+    stack: {
+      FRAMEWORK: [
+        { n: "FastAPI", v: "0.115" },
+        { n: "Starlette", v: "0.38" },
+      ],
+      LANGUAGE: [
+        { n: "Python", v: "3.11+" },
+        { n: "Pydantic", v: "2.8" },
+      ],
+      TOOLING: [
+        { n: "uvicorn", v: "0.30" },
+        { n: "uv", v: "0.4" },
+        { n: "Ruff", v: "0.6" },
+      ],
+      TESTING: [
+        { n: "pytest", v: "8.3" },
+        { n: "httpx", v: "0.27" },
+      ],
+    },
+    metrics: [
+      ["Files analyzed", "1,284"],
+      ["Primary language", "Python (94%)"],
+      ["First commit", "Dec 2018"],
+      ["Contributors", "680+"],
+    ],
+    summary: (
+      <span>
+        <strong>FastAPI</strong> is a modern Python web framework built on{" "}
+        <strong>Starlette</strong> and <strong>Pydantic</strong>. The core is in{" "}
+        <code>fastapi/</code>, with routing, dependency injection, and OpenAPI
+        generation. Request handling lives in <code>routing.py</code>; Pydantic
+        v2 drives serialization and validation. Excellent test coverage — start
+        with <code>tests/</code> to understand behavior.
+      </span>
+    ),
+  },
+  {
+    name: "supabase/supabase",
+    lang: "TypeScript",
+    stars: "72k",
+    stack: {
+      FRAMEWORK: [
+        { n: "Next.js", v: "14.2" },
+        { n: "Expo", v: "51" },
+      ],
+      LANGUAGE: [
+        { n: "TypeScript", v: "5.4" },
+        { n: "SQL", v: "—" },
+      ],
+      DATABASE: [
+        { n: "PostgreSQL", v: "15" },
+        { n: "PostgREST", v: "12" },
+      ],
+      TOOLING: [
+        { n: "Turborepo", v: "2.0" },
+        { n: "pnpm", v: "9.x" },
+      ],
+    },
+    metrics: [
+      ["Files analyzed", "8,842"],
+      ["Primary language", "TypeScript (76%)"],
+      ["First commit", "Jul 2020"],
+      ["Contributors", "2,100+"],
+    ],
+    summary: (
+      <span>
+        <strong>Supabase</strong> is a Turborepo monorepo that ships the Studio
+        dashboard (<code>apps/studio</code>), auth, storage, and docs as
+        independent Next.js apps. The database layer sits on{" "}
+        <strong>PostgreSQL</strong> + <strong>PostgREST</strong>. Good entry
+        point: <code>apps/studio/components/</code> for the UI, or{" "}
+        <code>apps/www/pages/</code> for the marketing stack.
+      </span>
+    ),
+  },
+];
+
+const FAQ_ITEMS = [
+  {
+    q: "Do you store my source code?",
+    a: "No. We analyze in-memory and persist only the generated artifacts — the diagram, the tech stack, and the brief. Your source is fetched via the GitHub API at analysis time and never written to disk.",
+  },
+  {
+    q: "How does the GitHub OAuth scope work?",
+    a: "We request read-only repo access. You can revoke it from GitHub's settings at any time. For public repos, no OAuth is needed — just paste the URL.",
+  },
+  {
+    q: "Which languages and frameworks are supported?",
+    a: "JavaScript, TypeScript, Python, Go, Rust, Ruby, Java, Kotlin, Swift, PHP, Elixir, C#, and C++ — plus their major frameworks. If your repo has a manifest file, we probably understand it.",
+  },
+  {
+    q: "Can I self-host this?",
+    a: "Yes, on the Team plan. We ship a Docker image and Kubernetes Helm chart. You bring your own LLM key (Claude or a compatible model) and we run entirely in your network.",
+  },
+  {
+    q: "How accurate is the AI brief?",
+    a: "The brief is guided by deterministic analysis — we parse manifests, imports, and config files first, then pass findings to the model to phrase. It won't hallucinate a database you're not using.",
+  },
+  {
+    q: "Is there an API?",
+    a: "Yes. The Pro plan includes 5,000 API calls / month. The Team plan is uncapped.",
+  },
+];
+
+export default function Page() {
+  const router = useRouter();
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [input, setInput] = useState("vercel/next.js");
+  const [variant, setVariant] = useState(0);
+  const [demoIdx, setDemoIdx] = useState(0);
+  const [faqOpen, setFaqOpen] = useState<number>(0);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  const heroExamples: { label: string; v: number }[] = [
+    { label: "vercel/next.js", v: 0 },
+    { label: "tiangolo/fastapi", v: 1 },
+    { label: "supabase/supabase", v: 2 },
+  ];
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !rootRef.current) return;
+    const els = rootRef.current.querySelectorAll(".reveal");
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) e.target.classList.add("in");
+        });
+      },
+      { threshold: 0.1 },
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
+  function submitRepo(raw: string) {
+    const parsed = parseGitHubInput(raw);
+    if (!parsed) return;
+    router.push(`/public/${parsed.owner}/${parsed.repo}`);
+  }
+
+  const demo = DEMO_REPOS[demoIdx];
+
+  return (
+    <div ref={rootRef} data-theme={theme} className="rb-root">
       <style>{`
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        :root {
-          --bg:         #faf9f6;
-          --bg-card:    #ffffff;
-          --bg-alt:     #f2f1ec;
-          --text:       #0f0e0d;
-          --muted:      #6d6c65;
-          --coral:      #d97757;
-          --coral-dim:  rgba(217,119,87,0.11);
-          --coral-glow: rgba(217,119,87,0.06);
-          --border:     rgba(0,0,0,0.07);
-          --dark:       #0f0e0d;
-          --dark-card:  #191817;
-          --serif:      var(--font-playfair), Georgia, serif;
-          --sans:       var(--font-dm-sans), system-ui, sans-serif;
-          --mono:       var(--font-dm-mono), ui-monospace, monospace;
-        }
-
-        body { background: var(--bg); color: var(--text); font-family: var(--sans); }
-
-        @keyframes rise {
-          from { opacity: 0; transform: translateY(20px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse-coral {
-          0%, 100% { opacity: 0.55; }
-          50%       { opacity: 1; }
-        }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-        @keyframes blob-drift {
-          0%,100% { transform: translateX(-50%) scale(1); }
-          50%     { transform: translateX(-50%) scale(1.06) translateY(10px); }
-        }
-
-        .r1 { animation: rise .65s cubic-bezier(.16,1,.3,1) .05s both; }
-        .r2 { animation: rise .65s cubic-bezier(.16,1,.3,1) .15s both; }
-        .r3 { animation: rise .65s cubic-bezier(.16,1,.3,1) .26s both; }
-        .r4 { animation: rise .65s cubic-bezier(.16,1,.3,1) .37s both; }
-        .r5 { animation: rise .65s cubic-bezier(.16,1,.3,1) .48s both; }
-        .r6 { animation: rise .65s cubic-bezier(.16,1,.3,1) .60s both; }
-
-        /* ── NAV ── */
-        .lp-nav {
-          position: sticky; top: 0; z-index: 50;
-          display: flex; align-items: center; justify-content: space-between;
-          padding: 0 clamp(1.5rem, 5vw, 5rem);
-          height: 62px;
-          border-bottom: 1px solid var(--border);
-          background: rgba(250,249,246,0.9);
-          backdrop-filter: blur(14px);
-        }
-        .lp-logo {
-          font-family: var(--serif);
-          font-size: 17px; font-weight: 700; letter-spacing: -0.02em;
-          color: var(--text); text-decoration: none;
-        }
-        .lp-logo em { color: var(--coral); font-style: italic; }
-        .nav-links { display: flex; align-items: center; gap: 2px; }
-        .nav-link {
-          font-size: 14px; font-weight: 400; color: var(--muted);
-          text-decoration: none; padding: 6px 14px; border-radius: 6px;
-          transition: color .15s, background .15s;
-        }
-        .nav-link:hover { color: var(--text); background: rgba(0,0,0,0.04); }
-        .nav-signin {
-          display: inline-flex; align-items: center; gap: 7px;
-          font-size: 13px; font-weight: 600;
-          color: #fff; background: var(--text);
-          text-decoration: none; padding: 8px 18px; border-radius: 8px;
-          margin-left: 6px; transition: opacity .15s;
-        }
-        .nav-signin:hover { opacity: 0.8; }
-
-        /* ── HERO ── */
-        .lp-hero {
-          position: relative;
-          display: flex; flex-direction: column; align-items: center;
-          text-align: center;
-          padding: clamp(5rem, 10vw, 8.5rem) clamp(1.5rem, 5vw, 4rem) 0;
-          overflow: hidden;
-        }
-        .hero-blob {
-          position: absolute;
-          width: 900px; height: 600px;
-          top: -180px; left: 50%;
-          transform: translateX(-50%);
-          background: radial-gradient(ellipse at center,
-            rgba(217,119,87,0.13) 0%,
-            rgba(217,119,87,0.05) 45%,
-            transparent 70%);
-          animation: blob-drift 12s ease-in-out infinite;
-          pointer-events: none;
-        }
-        .hero-blob-2 {
-          position: absolute;
-          width: 600px; height: 400px;
-          top: 60px; left: 55%;
-          background: radial-gradient(ellipse at center,
-            rgba(100,140,255,0.06) 0%,
-            transparent 65%);
-          pointer-events: none;
-        }
-        .lp-eyebrow {
-          display: inline-flex; align-items: center; gap: 7px;
-          font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
-          text-transform: uppercase; color: var(--coral);
-          background: var(--coral-dim); border: 1px solid rgba(217,119,87,0.18);
-          padding: 5px 14px; border-radius: 100px;
-          margin-bottom: 28px; position: relative; z-index: 1;
-        }
-        .eyebrow-dot {
-          width: 6px; height: 6px; border-radius: 50%; background: var(--coral);
-          animation: pulse-coral 2s ease-in-out infinite;
-        }
-        .lp-h1 {
-          font-family: var(--serif);
-          font-size: clamp(3.2rem, 7.5vw, 6.8rem);
-          font-weight: 900; line-height: 0.94;
-          letter-spacing: -0.035em;
-          color: var(--text); max-width: 800px;
-          margin-bottom: 24px;
-          position: relative; z-index: 1;
-        }
-        .lp-h1 em { color: var(--coral); font-style: italic; }
-        .lp-sub {
-          font-size: clamp(15px, 1.8vw, 18px);
-          font-weight: 300; color: var(--muted); max-width: 460px;
-          line-height: 1.78; margin-bottom: 40px;
-          position: relative; z-index: 1;
-        }
-        .hero-form-block {
-          position: relative; z-index: 1;
-          width: 100%; max-width: 520px;
-          margin-bottom: 18px;
-        }
-        .hero-or {
-          display: flex; align-items: center; gap: 12px;
-          width: 100%; max-width: 520px;
-          font-family: var(--mono); font-size: 11px; color: #c0bfb8;
-          margin-bottom: 14px; position: relative; z-index: 1;
-        }
-        .hero-or::before, .hero-or::after {
-          content: ''; flex: 1; height: 1px; background: var(--border);
-        }
-        .btn-dark {
-          display: inline-flex; align-items: center; gap: 8px;
-          font-size: 14px; font-weight: 600;
-          color: #fff; background: var(--text);
-          padding: 13px 26px; border-radius: 8px;
-          text-decoration: none; transition: opacity .15s, transform .2s;
-          position: relative; z-index: 1;
-        }
-        .btn-dark:hover { opacity: 0.82; transform: translateY(-1px); }
-        .hero-hint {
-          font-family: var(--mono); font-size: 11px; color: #b4b3ac;
-          margin-bottom: 52px; position: relative; z-index: 1;
-        }
-
-        /* ── HERO BROWSER MOCKUP ── */
-        .hero-browser {
-          position: relative; z-index: 1;
-          width: 100%; max-width: 940px;
-          margin-top: 0;
-          border-radius: 14px 14px 0 0;
-          border: 1px solid rgba(0,0,0,0.1);
-          border-bottom: none;
-          background: #fff;
-          box-shadow:
-            0 2px 0 rgba(0,0,0,0.04),
-            0 24px 80px rgba(0,0,0,0.1),
-            0 8px 20px rgba(0,0,0,0.06);
-          overflow: hidden;
-        }
-        .browser-bar {
-          background: #f0efeb;
-          border-bottom: 1px solid rgba(0,0,0,0.08);
-          padding: 11px 16px;
-          display: flex; align-items: center; gap: 0;
-        }
-        .browser-dots { display: flex; gap: 6px; margin-right: 14px; }
-        .bd { width: 11px; height: 11px; border-radius: 50%; }
-        .bd-r { background: #ff5f57; }
-        .bd-y { background: #febc2e; }
-        .bd-g { background: #28c840; }
-        .browser-url {
-          flex: 1; background: rgba(0,0,0,0.06); border-radius: 6px;
-          padding: 5px 12px; font-family: var(--mono); font-size: 11px; color: #9d9c95;
-        }
-        .browser-body {
-          background: #0f0e0d; padding: 28px 32px; min-height: 260px;
-        }
-        .an-prompt { font-family: var(--mono); font-size: 12px; color: #4a4947; margin-bottom: 20px; }
-        .an-prompt span { color: var(--coral); }
-        .an-sec { margin-bottom: 18px; }
-        .an-label {
-          font-family: var(--mono); font-size: 11px; color: var(--coral);
-          margin-bottom: 7px;
-          display: flex; align-items: center; gap: 8px;
-        }
-        .an-label::after { content:''; flex:1; height:1px; background:rgba(217,119,87,0.12); }
-        .an-text { font-family: var(--mono); font-size: 12px; color: #6b6a62; line-height: 1.85; }
-        .an-tags { display: flex; flex-wrap: wrap; gap: 5px; }
-        .an-tag {
-          font-family: var(--mono); font-size: 11px; color: #6b6a62;
-          border: 1px solid rgba(255,255,255,0.07);
-          background: rgba(255,255,255,0.04);
-          padding: 3px 9px; border-radius: 4px;
-        }
-        .an-diagram { font-family: var(--mono); font-size: 11px; color: #4a4947; line-height: 2.2; }
-        .an-node {
-          display: inline-block;
-          border: 1px solid rgba(135,170,255,0.25);
-          background: rgba(135,170,255,0.07);
-          color: #87aaff;
-          padding: 0 7px; border-radius: 3px;
-        }
-        .an-cursor {
-          display: inline-block; width: 7px; height: 13px;
-          background: var(--coral); vertical-align: middle; margin-left: 3px;
-          animation: blink 1s step-end infinite;
-        }
-
-        /* ── FEATURES BAND ── */
-        .features-band { background: var(--bg); }
-        .feat-section {
-          border-top: 1px solid var(--border);
-          padding: clamp(4rem, 8vw, 7rem) clamp(1.5rem, 5vw, 5rem);
-        }
-        .feat-inner {
-          max-width: 1080px; margin: 0 auto;
-          display: grid; grid-template-columns: 1fr 1fr;
-          gap: clamp(3rem, 5vw, 6rem);
-          align-items: center;
-        }
-        .feat-inner.flip { }
-        .feat-label {
-          font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
-          text-transform: uppercase; color: var(--coral); margin-bottom: 14px;
-        }
-        .feat-h2 {
-          font-family: var(--serif);
-          font-size: clamp(2rem, 3.2vw, 2.7rem);
-          font-weight: 700; letter-spacing: -0.03em; line-height: 1.1;
-          color: var(--text); margin-bottom: 18px;
-        }
-        .feat-desc {
-          font-size: 15px; font-weight: 300;
-          color: var(--muted); line-height: 1.82; margin-bottom: 28px;
-        }
-        .feat-points { list-style: none; display: flex; flex-direction: column; gap: 11px; }
-        .feat-point {
-          display: flex; align-items: flex-start; gap: 10px;
-          font-size: 14px; color: var(--muted); line-height: 1.65;
-        }
-        .feat-arrow { color: var(--coral); flex-shrink: 0; margin-top: 1px; font-size: 13px; }
-        .feat-point strong { color: var(--text); font-weight: 500; }
-
-        /* feature card */
-        .feat-card {
-          background: var(--bg-card);
-          border: 1px solid var(--border);
-          border-radius: 14px; overflow: hidden;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
-        }
-        .feat-card-head {
-          padding: 13px 18px;
-          border-bottom: 1px solid var(--border);
-          background: #f8f7f4;
-          display: flex; align-items: center; gap: 8px;
-        }
-        .feat-card-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--coral); opacity: 0.65; }
-        .feat-card-title { font-family: var(--mono); font-size: 12px; color: var(--muted); }
-        .feat-card-body { padding: 22px; }
-
-        /* diagram mockup */
-        .diag-mock {
-          background: #0f0e0d; padding: 18px 20px; border-radius: 8px;
-          font-family: var(--mono); font-size: 11px; line-height: 2.3;
-        }
-        .diag-comment { color: #3d3c38; }
-        .diag-node {
-          display: inline-block;
-          border: 1px solid rgba(135,170,255,0.22);
-          background: rgba(135,170,255,0.07);
-          color: #87aaff; padding: 0 6px; border-radius: 3px;
-        }
-        .diag-arrow { color: #3d3c38; }
-        .diag-ann { color: #4a7a4a; font-size: 10px; }
-
-        /* tech grid */
-        .tech-grid {
-          display: grid; grid-template-columns: repeat(3, 1fr);
-          gap: 7px;
-        }
-        .tech-badge {
-          display: flex; flex-direction: column; gap: 3px;
-          padding: 11px 13px; border: 1px solid var(--border);
-          border-radius: 8px; background: var(--bg);
-          transition: border-color .15s, background .15s;
-        }
-        .tech-badge:hover { border-color: rgba(217,119,87,0.25); background: var(--coral-dim); }
-        .tech-name { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--text); }
-        .tech-role { font-family: var(--mono); font-size: 10px; color: var(--muted); }
-
-        /* onboarding steps */
-        .onboard-list { display: flex; flex-direction: column; }
-        .onboard-step {
-          display: flex; align-items: flex-start; gap: 13px;
-          padding: 15px 0; border-bottom: 1px solid var(--border);
-        }
-        .onboard-step:last-child { border-bottom: none; }
-        .step-num {
-          width: 26px; height: 26px; border-radius: 50%;
-          background: var(--coral-dim);
-          border: 1px solid rgba(217,119,87,0.25);
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0;
-          font-family: var(--mono); font-size: 11px; color: var(--coral);
-        }
-        .step-body { flex: 1; }
-        .step-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
-        .step-cmd { font-family: var(--mono); font-size: 11px; color: var(--muted); }
-        .step-done {
-          width: 17px; height: 17px; border-radius: 50%;
-          background: rgba(40,200,64,0.12);
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0; font-size: 9px; color: #28c840;
-        }
-
-
-        /* ── DARK SECTION ── */
-        .lp-dark {
-          background: var(--dark);
-          border-top: 1px solid rgba(255,255,255,0.04);
-          padding: clamp(4.5rem, 9vw, 8rem) clamp(1.5rem, 5vw, 5rem);
-        }
-        .dark-inner {
-          max-width: 1080px; margin: 0 auto;
-          display: grid; grid-template-columns: 1fr 1fr;
-          gap: clamp(3rem, 6vw, 6rem);
-          align-items: start;
-        }
-        .dark-label {
-          font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
-          text-transform: uppercase; color: var(--coral); margin-bottom: 16px;
-        }
-        .dark-h2 {
-          font-family: var(--serif);
-          font-size: clamp(2.4rem, 4.5vw, 4rem);
-          font-weight: 700; letter-spacing: -0.035em; line-height: 1.06;
-          color: #f0ece3; margin-bottom: 22px;
-        }
-        .dark-h2 em { color: var(--coral); font-style: italic; }
-        .dark-desc {
-          font-size: 15px; color: #5d5c55; line-height: 1.82;
-          font-weight: 300; margin-bottom: 36px;
-        }
-        .btn-coral {
-          display: inline-flex; align-items: center; gap: 8px;
-          font-size: 14px; font-weight: 600;
-          color: #fff; background: var(--coral);
-          padding: 13px 26px; border-radius: 8px;
-          text-decoration: none; transition: opacity .15s, transform .2s;
-        }
-        .btn-coral:hover { opacity: 0.88; transform: translateY(-1px); }
-        .dark-feats { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
-        .dark-feat {
-          display: flex; align-items: flex-start; gap: 13px;
-          padding: 16px 18px;
-          background: rgba(255,255,255,0.035);
-          border: 1px solid rgba(255,255,255,0.055);
-          border-radius: 10px;
-          transition: background .15s, border-color .15s;
-        }
-        .dark-feat:hover {
-          background: rgba(255,255,255,0.055);
-          border-color: rgba(217,119,87,0.18);
-        }
-        .dark-feat-icon {
-          width: 30px; height: 30px; border-radius: 7px;
-          background: var(--coral-dim);
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0; font-size: 13px;
-        }
-        .dark-feat-info { flex: 1; }
-        .dark-feat-title { font-size: 13px; font-weight: 500; color: #c0bdb6; margin-bottom: 2px; }
-        .dark-feat-desc { font-size: 12px; color: #454440; font-weight: 300; line-height: 1.6; }
-
-        /* ── PRICING ── */
-        .lp-pricing {
+        .rb-root {
+          --bg: #F7F5EF;
+          --bg-soft: #EEEBE2;
+          --bg-elevated: #FFFFFF;
+          --ink: #14140F;
+          --ink-soft: #44443D;
+          --ink-muted: #7A7A72;
+          --line: #1A1A15;
+          --line-soft: rgba(20,20,15,0.12);
+          --line-hairline: rgba(20,20,15,0.08);
+          --accent: oklch(68% 0.18 75);
+          --accent-ink: #1A1A15;
+          --accent-soft: oklch(92% 0.06 75);
+          --ok: oklch(58% 0.12 155);
+          --grid: rgba(20,20,15,0.05);
           background: var(--bg);
-          border-top: 1px solid var(--border);
-          padding: clamp(4rem, 8vw, 7rem) clamp(1.5rem, 5vw, 5rem);
+          color: var(--ink);
+          font-family: var(--font-jetbrains), ui-monospace, Menlo, monospace;
+          font-size: 15px;
+          line-height: 1.55;
+          -webkit-font-smoothing: antialiased;
+          min-height: 100vh;
+          transition: background 240ms ease, color 240ms ease;
         }
-        .pricing-inner { max-width: 820px; margin: 0 auto; }
-        .pricing-label {
-          font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
-          text-transform: uppercase; color: var(--coral); margin-bottom: 14px;
+        .rb-root[data-theme="dark"] {
+          --bg: #0E0E0B;
+          --bg-soft: #1A1A15;
+          --bg-elevated: #121210;
+          --ink: #F2EFE5;
+          --ink-soft: #BEBBB0;
+          --ink-muted: #807D73;
+          --line: #F2EFE5;
+          --line-soft: rgba(242,239,229,0.14);
+          --line-hairline: rgba(242,239,229,0.08);
+          --accent: oklch(78% 0.17 75);
+          --accent-ink: #0E0E0B;
+          --accent-soft: oklch(30% 0.08 75);
+          --grid: rgba(242,239,229,0.05);
         }
-        .pricing-h2 {
-          font-family: var(--serif);
-          font-size: clamp(2.2rem, 4vw, 3.2rem);
-          font-weight: 700; letter-spacing: -0.03em; line-height: 1.08;
-          color: var(--text); margin-bottom: 52px;
-        }
-        .pricing-grid {
-          display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
-        }
-        @media (max-width: 580px) { .pricing-grid { grid-template-columns: 1fr; } }
-        .price-card {
-          border-radius: 14px; padding: 34px 30px;
-          border: 1px solid var(--border);
-          background: var(--bg-card);
-          transition: border-color .2s;
-        }
-        .price-card:hover { border-color: rgba(0,0,0,0.14); }
-        .price-card.pro {
-          background: #0f0e0d; border-color: rgba(217,119,87,0.18);
-        }
-        .price-card.pro:hover { border-color: rgba(217,119,87,0.38); }
-        .price-tier {
-          font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
-          text-transform: uppercase; color: var(--muted);
-          display: flex; align-items: center; justify-content: space-between;
-          margin-bottom: 24px;
-        }
-        .price-card.pro .price-tier { color: var(--coral); }
-        .coming-badge {
-          font-family: var(--mono); font-size: 10px;
-          color: var(--coral); background: var(--coral-dim);
-          border: 1px solid rgba(217,119,87,0.18);
-          padding: 2px 9px; border-radius: 4px;
-        }
-        .price-amount {
-          font-family: var(--serif); font-size: 52px; font-weight: 900;
-          letter-spacing: -0.04em; line-height: 1;
-          color: var(--text); margin-bottom: 5px;
-        }
-        .price-card.pro .price-amount { color: #f0ece3; }
-        .price-period { font-size: 13px; color: var(--muted); margin-bottom: 30px; }
-        .price-card.pro .price-period { color: #4a4947; }
-        .price-list {
-          list-style: none; margin-bottom: 32px;
-          display: flex; flex-direction: column; gap: 9px;
-        }
-        .price-item {
-          display: flex; align-items: center; gap: 9px;
-          font-size: 14px; font-weight: 300; color: var(--muted);
-        }
-        .price-item.on { color: var(--text); }
-        .price-card.pro .price-item.on { color: #b8b5ae; }
-        .price-check {
-          width: 15px; height: 15px; border-radius: 50%;
-          background: var(--coral-dim);
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0; font-size: 9px; color: var(--coral);
-        }
-        .price-cross {
-          width: 15px; height: 15px; border-radius: 50%;
-          background: rgba(0,0,0,0.04);
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0; font-size: 9px; color: #c5c4bc;
-        }
-        .price-btn {
-          display: block; width: 100%; text-align: center;
-          font-size: 14px; font-weight: 500; color: var(--text);
-          text-decoration: none; border: 1px solid var(--border);
-          padding: 12px 24px; border-radius: 8px;
-          transition: border-color .15s, background .15s;
-        }
-        .price-btn:hover { border-color: rgba(0,0,0,0.18); background: rgba(0,0,0,0.03); }
-        .price-btn-disabled {
-          display: block; width: 100%; text-align: center;
-          font-size: 14px; font-weight: 500; color: #4a4947;
-          background: rgba(217,119,87,0.07);
-          border: 1px solid rgba(217,119,87,0.14);
-          padding: 12px 24px; border-radius: 8px; cursor: not-allowed;
-        }
+        .rb-root *, .rb-root *::before, .rb-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        .rb-root a { color: inherit; text-decoration: none; }
+        .rb-root button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+        .rb-root code { font-family: inherit; font-size: 0.94em; color: var(--ink); background: var(--bg-soft); padding: 1px 4px; }
 
-        /* ── FOOTER ── */
-        .lp-footer {
-          background: var(--bg-alt);
-          border-top: 1px solid var(--border);
-          padding: 26px clamp(1.5rem, 5vw, 5rem);
-          display: flex; align-items: center; justify-content: space-between;
-          flex-wrap: wrap; gap: 14px;
-        }
-        .footer-logo {
-          font-family: var(--serif); font-size: 15px; font-weight: 700;
-          color: var(--text); text-decoration: none;
-        }
-        .footer-logo em { color: var(--coral); font-style: italic; }
-        .footer-links { display: flex; gap: 18px; }
-        .footer-link { font-size: 13px; color: var(--muted); text-decoration: none; transition: color .15s; }
-        .footer-link:hover { color: var(--text); }
-        .footer-built { font-family: var(--mono); font-size: 11px; color: #c0bfb8; }
+        .serif { font-family: var(--font-instrument), 'Times New Roman', serif; font-weight: 400; letter-spacing: -0.01em; }
 
-        @media (max-width: 860px) {
-          .feat-inner { grid-template-columns: 1fr; }
-          .feat-inner.flip > :first-child { order: 2; }
-          .feat-inner.flip > :last-child  { order: 1; }
-          .dark-inner { grid-template-columns: 1fr; }
-          .tech-grid  { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 680px) {
-          .nav-links a:not(.nav-signin) { display: none; }
-          .lp-footer { flex-direction: column; align-items: flex-start; }
+        /* nav */
+        .rb-nav { position: sticky; top: 0; z-index: 50; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+        .rb-nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; max-width: 1320px; margin: 0 auto; gap: 24px; }
+        .rb-logo { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 15px; letter-spacing: -0.01em; }
+        .rb-logo-mark { width: 22px; height: 22px; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-size: 12px; font-weight: 600; }
+        .rb-root[data-theme="dark"] .rb-logo-mark { background: var(--accent); color: var(--accent-ink); }
+        .rb-nav-links { display: flex; gap: 28px; font-size: 13px; color: var(--ink-soft); }
+        .rb-nav-links a { transition: color 150ms; }
+        .rb-nav-links a:hover { color: var(--ink); }
+        .rb-nav-cta { display: flex; align-items: center; gap: 10px; }
+
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; font-size: 13px; border: 1px solid var(--line); background: transparent; color: var(--ink); transition: all 150ms; cursor: pointer; letter-spacing: 0.01em; }
+        .btn:hover { background: var(--ink); color: var(--bg); }
+        .btn-primary { background: var(--ink); color: var(--bg); }
+        .btn-primary:hover { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+        .btn-accent { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+        .btn-accent:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+        .btn-ghost { border-color: var(--line-soft); color: var(--ink-soft); padding: 8px 10px; }
+        .btn-ghost:hover { color: var(--ink); border-color: var(--line); background: transparent; }
+
+        .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-muted); }
+        .eyebrow-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+
+        .section-label { display: flex; align-items: center; justify-content: space-between; padding: 14px 40px; font-size: 11px; color: var(--ink-muted); letter-spacing: 0.12em; text-transform: uppercase; border-bottom: 1px solid var(--line-soft); }
+        .section-label-right { display: flex; gap: 16px; }
+
+        /* hero */
+        .rb-hero { position: relative; padding: 72px 40px 80px; border-bottom: 1px solid var(--line); overflow: hidden; }
+        .rb-hero-grid { position: absolute; inset: 0; background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 56px 56px; pointer-events: none; -webkit-mask-image: radial-gradient(circle at 30% 50%, black 0%, transparent 75%); mask-image: radial-gradient(circle at 30% 50%, black 0%, transparent 75%); }
+        .rb-hero-inner { position: relative; max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
+        .rb-hero-title { font-size: clamp(44px, 6vw, 84px); line-height: 0.96; letter-spacing: -0.025em; margin-top: 24px; color: var(--ink); }
+        .rb-hero-title .slash { color: var(--accent); font-style: italic; }
+        .rb-hero-sub { margin-top: 28px; max-width: 540px; font-size: 15px; line-height: 1.65; color: var(--ink-soft); }
+        .rb-hero-input-wrap { margin-top: 36px; max-width: 540px; }
+        .rb-hero-input-row { display: flex; border: 1px solid var(--line); background: var(--bg-elevated); transition: border-color 150ms; }
+        .rb-hero-input-row:focus-within { border-color: var(--accent); }
+        .rb-hero-input-prefix { padding: 0 12px; display: grid; place-items: center; font-size: 13px; color: var(--ink-muted); border-right: 1px solid var(--line-soft); }
+        .rb-hero-input { flex: 1; padding: 14px; background: transparent; border: 0; outline: 0; font: inherit; color: var(--ink); font-size: 13px; }
+        .rb-hero-input::placeholder { color: var(--ink-muted); }
+        .rb-hero-analyze { padding: 0 20px; background: var(--ink); color: var(--bg); font-size: 13px; display: flex; align-items: center; gap: 8px; transition: background 150ms; }
+        .rb-hero-analyze:hover { background: var(--accent); color: var(--accent-ink); }
+        .rb-hero-examples { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; font-size: 12px; }
+        .rb-hero-example-label { color: var(--ink-muted); padding: 4px 0; }
+        .rb-hero-example-pill { padding: 4px 10px; border: 1px solid var(--line-soft); color: var(--ink-soft); transition: all 150ms; cursor: pointer; }
+        .rb-hero-example-pill:hover { border-color: var(--line); color: var(--ink); background: var(--bg-soft); }
+
+        /* diagram */
+        .diagram-card { position: relative; border: 1px solid var(--line); background: var(--bg-elevated); aspect-ratio: 1 / 1; max-height: 560px; display: flex; flex-direction: column; }
+        .diagram-chrome { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--line-soft); font-size: 11px; color: var(--ink-muted); letter-spacing: 0.06em; }
+        .diagram-chrome-dots { display: flex; gap: 6px; }
+        .dot { width: 9px; height: 9px; border: 1px solid var(--line-soft); }
+        .diagram-body { flex: 1; position: relative; overflow: hidden; color: var(--ink); }
+        .mermaid-svg { width: 100%; height: 100%; display: block; }
+        .node-box { fill: var(--bg-elevated); stroke: var(--ink); stroke-width: 1; }
+        .node-box.accent { fill: var(--accent-soft); stroke: var(--accent); }
+        .node-text { font-family: var(--font-jetbrains), monospace; font-size: 11px; fill: var(--ink); }
+        .edge-line { stroke: var(--ink); stroke-width: 1; fill: none; }
+        .diagram-status { position: absolute; bottom: 0; left: 0; right: 0; padding: 10px 14px; border-top: 1px solid var(--line-soft); font-size: 11px; color: var(--ink-muted); display: flex; justify-content: space-between; background: var(--bg-elevated); }
+        .blink-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; display: inline-block; margin-right: 6px; animation: rb-blink 1.2s infinite; }
+        @keyframes rb-blink { 0%, 70% { opacity: 1; } 85%, 100% { opacity: 0.3; } }
+
+        /* marquee */
+        .rb-marquee { display: flex; padding: 18px 0; overflow: hidden; font-size: 12px; color: var(--ink-muted); white-space: nowrap; border-bottom: 1px solid var(--line); letter-spacing: 0.06em; text-transform: uppercase; }
+        .rb-marquee-track { display: flex; gap: 48px; animation: rb-scroll 40s linear infinite; padding-right: 48px; }
+        .rb-marquee-track span { display: inline-flex; align-items: center; gap: 10px; }
+        .rb-marquee-track span::before { content: "▸"; color: var(--accent); }
+        @keyframes rb-scroll { to { transform: translateX(-50%); } }
+
+        /* how it works */
+        .rb-howto { border-bottom: 1px solid var(--line); }
+        .rb-howto-head { padding: 72px 40px 40px; max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.3fr; gap: 40px; align-items: end; }
+        .section-title { font-size: clamp(36px, 4vw, 56px); line-height: 1; letter-spacing: -0.02em; }
+        .section-title .accent { color: var(--accent); font-style: italic; }
+        .rb-howto-grid { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); }
+        .rb-step { padding: 32px 28px 40px; border-right: 1px solid var(--line-soft); position: relative; min-height: 280px; display: flex; flex-direction: column; color: var(--ink); }
+        .rb-step:last-child { border-right: 0; }
+        .rb-step-num { font-size: 11px; color: var(--ink-muted); letter-spacing: 0.12em; }
+        .rb-step-title { font-size: 20px; margin-top: 40px; line-height: 1.2; letter-spacing: -0.01em; }
+        .rb-step-desc { margin-top: 12px; font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
+        .rb-step-visual { margin-top: auto; padding-top: 20px; height: 72px; display: flex; align-items: flex-end; }
+
+        /* features */
+        .rb-features { border-bottom: 1px solid var(--line); }
+        .rb-features-head { padding: 72px 40px 40px; max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.3fr; gap: 40px; align-items: end; }
+        .rb-features-grid { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
+        .rb-feature { padding: 32px 28px 36px; border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); color: var(--ink); }
+        .rb-feature:nth-child(3n) { border-right: 0; }
+        .rb-feature:nth-last-child(-n+3) { border-bottom: 0; }
+        .rb-feature-label { font-size: 11px; color: var(--ink-muted); letter-spacing: 0.12em; }
+        .rb-feature-title { font-size: 22px; margin-top: 12px; letter-spacing: -0.01em; }
+        .rb-feature-desc { margin-top: 12px; font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
+        .rb-feature-glyph { margin-top: 24px; height: 100px; border: 1px solid var(--line-soft); background: var(--bg-soft); display: grid; place-items: center; overflow: hidden; position: relative; color: var(--ink); }
+
+        /* live demo */
+        .rb-demo { border-bottom: 1px solid var(--line); }
+        .rb-demo-head { padding: 72px 40px 40px; max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.3fr; gap: 40px; align-items: end; }
+        .rb-demo-wrap { max-width: 1320px; margin: 0 auto; padding: 0 40px 72px; }
+        .rb-demo-tabs { display: flex; border: 1px solid var(--line); border-bottom: 0; background: var(--bg-elevated); }
+        .rb-demo-tab { padding: 14px 18px; font-size: 12px; color: var(--ink-muted); border-right: 1px solid var(--line-soft); cursor: pointer; transition: all 150ms; display: flex; flex-direction: column; gap: 4px; min-width: 160px; text-align: left; }
+        .rb-demo-tab:last-child { border-right: 0; }
+        .rb-demo-tab-repo { color: var(--ink); font-size: 13px; }
+        .rb-demo-tab-lang { font-size: 11px; letter-spacing: 0.08em; }
+        .rb-demo-tab.active { background: var(--bg); color: var(--ink); border-bottom: 1px solid var(--bg); margin-bottom: -1px; }
+        .rb-demo-tab:hover:not(.active) { background: var(--bg-soft); }
+        .rb-demo-panel { border: 1px solid var(--line); background: var(--bg-elevated); display: grid; grid-template-columns: 280px 1fr 280px; min-height: 520px; }
+        .rb-demo-col { padding: 24px; border-right: 1px solid var(--line-soft); overflow: hidden; color: var(--ink); }
+        .rb-demo-col:last-child { border-right: 0; }
+        .rb-demo-col-title { font-size: 11px; color: var(--ink-muted); letter-spacing: 0.12em; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+        .stack-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px dashed var(--line-hairline); font-size: 12px; }
+        .stack-item-name { color: var(--ink); }
+        .stack-item-v { color: var(--ink-muted); }
+        .stack-group + .stack-group { margin-top: 22px; }
+        .stack-group-label { font-size: 10px; color: var(--ink-muted); letter-spacing: 0.14em; margin-bottom: 4px; }
+        .ai-summary { font-size: 13px; line-height: 1.7; color: var(--ink-soft); }
+        .ai-summary strong { color: var(--ink); font-weight: 500; }
+        .ai-metric { display: flex; justify-content: space-between; padding: 8px 0; font-size: 12px; border-bottom: 1px dashed var(--line-hairline); }
+        .ai-metric-v { color: var(--ink); font-feature-settings: "tnum"; }
+
+        /* preview */
+        .rb-preview { border-bottom: 1px solid var(--line); }
+        .rb-preview-head { padding: 72px 40px 40px; max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.3fr; gap: 40px; align-items: end; }
+        .rb-preview-grid { max-width: 1320px; margin: 0 auto; padding: 0 40px 72px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .code-card { border: 1px solid var(--line); background: var(--bg-elevated); overflow: hidden; display: flex; flex-direction: column; }
+        .code-card-head { padding: 10px 14px; border-bottom: 1px solid var(--line-soft); font-size: 11px; color: var(--ink-muted); letter-spacing: 0.08em; display: flex; justify-content: space-between; }
+        .code-card-body { padding: 20px; font-size: 12.5px; line-height: 1.7; overflow: auto; min-height: 360px; color: var(--ink); }
+        .code-card-body pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--font-jetbrains), monospace; }
+        .c-k { color: var(--accent); }
+        .c-s { color: var(--ok); }
+        .c-c { color: var(--ink-muted); font-style: italic; }
+
+        /* pricing */
+        .rb-pricing { border-bottom: 1px solid var(--line); }
+        .rb-pricing-head { padding: 72px 40px 40px; max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.3fr; gap: 40px; align-items: end; }
+        .rb-pricing-grid { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
+        .rb-price-card { padding: 32px 28px 36px; border-right: 1px solid var(--line-soft); display: flex; flex-direction: column; min-height: 460px; color: var(--ink); }
+        .rb-price-card:last-child { border-right: 0; }
+        .rb-price-card.featured { background: var(--bg-soft); }
+        .price-tier { font-size: 12px; letter-spacing: 0.12em; color: var(--ink-muted); }
+        .price-value { font-size: 48px; line-height: 1; margin-top: 20px; letter-spacing: -0.02em; }
+        .price-value sup { font-size: 18px; color: var(--ink-muted); vertical-align: top; margin-right: 2px; }
+        .price-value small { font-size: 13px; color: var(--ink-muted); margin-left: 4px; }
+        .price-desc { margin-top: 14px; font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+        .price-list { margin-top: 24px; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+        .price-list li { display: flex; gap: 10px; align-items: flex-start; }
+        .price-list li::before { content: "+"; color: var(--accent); font-weight: 500; }
+        .price-cta { margin-top: auto; padding-top: 24px; }
+
+        /* faq */
+        .rb-faq { border-bottom: 1px solid var(--line); }
+        .rb-faq-head { padding: 72px 40px 40px; max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.3fr; gap: 40px; align-items: end; }
+        .rb-faq-list { max-width: 1320px; margin: 0 auto; padding: 0 40px 72px; }
+        .rb-faq-item { border-top: 1px solid var(--line-soft); }
+        .rb-faq-item:last-child { border-bottom: 1px solid var(--line-soft); }
+        .rb-faq-q { width: 100%; text-align: left; padding: 22px 0; display: flex; justify-content: space-between; align-items: center; font-size: 16px; letter-spacing: -0.01em; transition: color 150ms; color: var(--ink); }
+        .rb-faq-q:hover { color: var(--accent); }
+        .rb-faq-q-toggle { width: 22px; height: 22px; display: grid; place-items: center; border: 1px solid var(--line-soft); font-size: 14px; transition: transform 200ms, border-color 150ms, color 150ms; }
+        .rb-faq-item.open .rb-faq-q-toggle { transform: rotate(45deg); border-color: var(--accent); color: var(--accent); }
+        .rb-faq-a { max-height: 0; overflow: hidden; transition: max-height 300ms ease, padding 300ms ease; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
+        .rb-faq-item.open .rb-faq-a { max-height: 260px; padding: 0 0 24px; }
+
+        /* final cta */
+        .rb-cta-final { padding: 120px 40px; border-bottom: 1px solid var(--line); background: var(--ink); color: var(--bg); position: relative; overflow: hidden; }
+        .rb-root[data-theme="dark"] .rb-cta-final { background: var(--accent-soft); color: var(--ink); }
+        .rb-cta-final-inner { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; }
+        .rb-cta-final-title { font-size: clamp(40px, 5vw, 72px); line-height: 0.98; letter-spacing: -0.025em; }
+        .rb-cta-final-title em { color: var(--accent); font-style: italic; font-family: var(--font-instrument), serif; }
+        .rb-cta-final-sub { margin-top: 20px; font-size: 14px; opacity: 0.7; max-width: 420px; }
+        .rb-cta-final-btn { display: inline-flex; align-items: center; gap: 12px; padding: 18px 28px; background: var(--accent); color: var(--accent-ink); border: 1px solid var(--accent); font-size: 14px; transition: all 150ms; }
+        .rb-cta-final-btn:hover { background: var(--bg); color: var(--ink); border-color: var(--bg); }
+
+        /* footer */
+        .rb-footer { padding: 48px 40px 32px; }
+        .rb-footer-inner { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; }
+        .rb-footer-brand-desc { margin-top: 16px; font-size: 12px; color: var(--ink-muted); max-width: 280px; line-height: 1.6; }
+        .rb-footer-col-title { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-muted); text-transform: uppercase; margin-bottom: 16px; }
+        .rb-footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: var(--ink-soft); }
+        .rb-footer-col a:hover { color: var(--accent); }
+        .rb-footer-bottom { max-width: 1320px; margin: 48px auto 0; padding-top: 20px; border-top: 1px solid var(--line-soft); display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-muted); letter-spacing: 0.06em; }
+
+        /* tweaks */
+        .rb-tweaks { position: fixed; bottom: 24px; right: 24px; z-index: 100; background: var(--bg-elevated); border: 1px solid var(--line); padding: 16px; font-size: 12px; min-width: 240px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); color: var(--ink); }
+        .rb-tweaks-head { display: flex; justify-content: space-between; margin-bottom: 14px; font-size: 11px; color: var(--ink-muted); letter-spacing: 0.12em; }
+        .tweak-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid var(--line-soft); }
+        .tweak-row:first-of-type { border-top: 0; }
+        .tweak-seg { display: flex; border: 1px solid var(--line-soft); }
+        .tweak-seg button { padding: 4px 10px; font-size: 11px; border-right: 1px solid var(--line-soft); color: var(--ink-soft); }
+        .tweak-seg button:last-child { border-right: 0; }
+        .tweak-seg button.on { background: var(--ink); color: var(--bg); }
+        .rb-tweaks-toggle { position: fixed; bottom: 24px; right: 24px; z-index: 99; padding: 8px 12px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid var(--line); background: var(--bg-elevated); color: var(--ink-soft); }
+
+        .reveal { opacity: 0; transform: translateY(16px); transition: opacity 600ms ease, transform 600ms ease; }
+        .reveal.in { opacity: 1; transform: none; }
+
+        @media (max-width: 900px) {
+          .rb-hero-inner, .rb-howto-head, .rb-features-head, .rb-demo-head, .rb-preview-head, .rb-pricing-head, .rb-faq-head, .rb-cta-final-inner { grid-template-columns: 1fr; }
+          .rb-howto-grid, .rb-features-grid, .rb-pricing-grid, .rb-demo-panel { grid-template-columns: 1fr; }
+          .rb-step, .rb-feature, .rb-price-card { border-right: 0; border-bottom: 1px solid var(--line-soft); }
+          .rb-preview-grid { grid-template-columns: 1fr; }
+          .rb-footer-inner { grid-template-columns: 1fr 1fr; }
+          .rb-nav-links { display: none; }
+          .rb-hero, .rb-howto-head, .rb-features-head, .rb-demo-head, .rb-preview-head, .rb-pricing-head, .rb-faq-head, .rb-demo-wrap, .rb-preview-grid, .rb-faq-list, .section-label, .rb-nav-inner, .rb-cta-final, .rb-footer { padding-left: 24px; padding-right: 24px; }
         }
       `}</style>
 
-      <div style={{ background: "var(--bg)", minHeight: "100vh" }}>
-
-        {/* NAV */}
-        <nav className="lp-nav">
-          <Link href="/" className="lp-logo">Repo<em>Brief</em></Link>
-          <div className="nav-links">
-            <a href="#features" className="nav-link">Features</a>
-            <a href="#pricing" className="nav-link">Pricing</a>
-            <Link href="/auth" className="nav-signin">{GH_ICON} Sign in</Link>
+      {/* NAV */}
+      <nav className="rb-nav">
+        <div className="rb-nav-inner">
+          <Link href="/" className="rb-logo">
+            <span>repobrief</span>
+            <span
+              style={{
+                fontSize: 11,
+                color: "var(--ink-muted)",
+                letterSpacing: "0.08em",
+                marginLeft: 4,
+              }}
+            >
+              v0.1
+            </span>
+          </Link>
+          <div className="rb-nav-links">
+            <a href="#how">how it works</a>
+            <a href="#features">features</a>
+            <a href="#demo">demo</a>
+            <a href="#pricing">pricing</a>
+            <a href="#faq">faq</a>
           </div>
-        </nav>
+          <div className="rb-nav-cta">
+            <button
+              className="btn btn-ghost"
+              aria-label="Toggle theme"
+              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            >
+              {theme === "light" ? "◑" : "◐"}
+            </button>
 
-        {/* ── HERO ── */}
-        <section className="lp-hero">
-          <div className="hero-blob" aria-hidden="true" />
-          <div className="hero-blob-2" aria-hidden="true" />
-
-          <div className="r1 lp-eyebrow">
-            <span className="eyebrow-dot" />
-            Powered by Claude · GitHub native
+            <Link className="btn btn-accent" href="/auth">
+              connect github →
+            </Link>
           </div>
-
-          <h1 className="r2 lp-h1">
-            Understand any<br /><em>repository,</em><br />instantly
-          </h1>
-
-          <p className="r3 lp-sub">
-            Paste any public GitHub URL and get architecture diagrams, tech stack breakdowns, file maps, and onboarding guides — streamed live by Claude, no account needed.
-          </p>
-
-          <div className="r4 hero-form-block">
-            <RepoInputForm theme="light" />
-          </div>
-
-          <div className="r4 hero-or">or sign in for private repos</div>
-
-          <Link href="/auth" className="r4 btn-dark">{GH_ICON} Connect GitHub</Link>
-
-          <p className="r5 hero-hint" style={{marginTop:"10px"}}>No credit card · 5 free analyses/month</p>
-
-          <div className="r5 hero-browser">
-            <div className="browser-bar">
-              <div className="browser-dots">
-                <div className="bd bd-r" /><div className="bd bd-y" /><div className="bd bd-g" />
-              </div>
-              <div className="browser-url">repobrief.vercel.app/dashboard/vercel/next.js</div>
-            </div>
-            <div className="browser-body">
-              <p className="an-prompt">$ analyzing <span>vercel/next.js</span> — reading 15 key files···</p>
-              <div className="an-sec">
-                <p className="an-label">▶ description</p>
-                <p className="an-text">Next.js is a production-grade React framework providing server-side rendering, static generation, file-based routing, and edge runtime support with zero configuration...</p>
-              </div>
-              <div className="an-sec">
-                <p className="an-label">▶ tech_stack</p>
-                <div className="an-tags">
-                  {["TypeScript","React 19","Node.js","Rust / SWC","Turbopack","Webpack"].map(t=>(
-                    <span key={t} className="an-tag">{t}</span>
-                  ))}
-                </div>
-              </div>
-              <div className="an-sec" style={{marginBottom:0}}>
-                <p className="an-label">▶ architecture</p>
-                <div className="an-diagram">
-                  <div><span className="an-node">Browser</span> ──→ <span className="an-node">Next.js</span> ──→ <span className="an-node">RSC Layer</span></div>
-                  <div style={{paddingLeft:"1.2rem"}}>└──→ <span className="an-node">API Route /analyze</span> ──→ <span className="an-node">Claude SDK</span><span className="an-cursor"/></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── FEATURES ── */}
-        <div id="features" className="features-band">
-
-          {/* 1 — Architecture */}
-          <section className="feat-section">
-            <div className="feat-inner">
-              <div>
-                <p className="feat-label">{'// architecture'}</p>
-                <h2 className="feat-h2">Visual architecture,<br />auto-generated</h2>
-                <p className="feat-desc">
-                  RepoBrief reads your entry points, configs, and module structure to produce an accurate Mermaid flowchart — no manual diagramming needed.
-                </p>
-                <ul className="feat-points">
-                  {[
-                    { t: <><strong>Mermaid diagrams rendered inline</strong> — see how services, layers, and data flow connect at a glance</> },
-                    { t: <><strong>15 key files analyzed</strong> — entry points, package manifests, schema files, CI configs, and more</> },
-                    { t: <><strong>Streamed live</strong> — watch the diagram emerge as Claude reads your codebase in real time</> },
-                  ].map((p,i) => (
-                    <li key={i} className="feat-point">
-                      <span className="feat-arrow">→</span><span>{p.t}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <div className="feat-card">
-                  <div className="feat-card-head">
-                    <div className="feat-card-dot" />
-                    <span className="feat-card-title">◈ Architecture</span>
-                  </div>
-                  <div className="feat-card-body">
-                    <div className="diag-mock">
-                      <div className="diag-comment">graph TD</div>
-                      <div>&nbsp;&nbsp;<span className="diag-node">Client</span> <span className="diag-arrow">──→</span> <span className="diag-node">Next.js</span> <span className="diag-ann">[App Router]</span></div>
-                      <div>&nbsp;&nbsp;<span className="diag-node">Next.js</span> <span className="diag-arrow">──→</span> <span className="diag-node">API Route</span> <span className="diag-ann">/api/analyze</span></div>
-                      <div>&nbsp;&nbsp;<span className="diag-node">API Route</span> <span className="diag-arrow">──→</span> <span className="diag-node">file-tree</span> <span className="diag-ann">[GitHub]</span></div>
-                      <div>&nbsp;&nbsp;<span className="diag-node">API Route</span> <span className="diag-arrow">──→</span> <span className="diag-node">Claude SDK</span> <span className="diag-ann">[stream]</span></div>
-                      <div>&nbsp;&nbsp;<span className="diag-node">Claude SDK</span> <span className="diag-arrow">──→</span> <span className="diag-node">Client</span> <span className="diag-ann">[SSE]</span></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* 2 — Tech Stack (flipped) */}
-          <section className="feat-section" style={{background:"var(--bg-alt)"}}>
-            <div className="feat-inner flip">
-              <div>
-                <div className="feat-card">
-                  <div className="feat-card-head">
-                    <div className="feat-card-dot" />
-                    <span className="feat-card-title">◉ Tech Stack</span>
-                  </div>
-                  <div className="feat-card-body">
-                    <div className="tech-grid">
-                      {[
-                        {name:"TypeScript", role:"language"},
-                        {name:"React 19",   role:"ui framework"},
-                        {name:"Next.js 16", role:"full-stack"},
-                        {name:"Claude AI",  role:"intelligence"},
-                        {name:"Octokit",    role:"github api"},
-                        {name:"NextAuth v5",role:"auth"},
-                        {name:"Tailwind v4",role:"styling"},
-                        {name:"Mermaid",    role:"diagrams"},
-                        {name:"DOMPurify",  role:"security"},
-                      ].map(t=>(
-                        <div key={t.name} className="tech-badge">
-                          <span className="tech-name">{t.name}</span>
-                          <span className="tech-role">{t.role}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <p className="feat-label">{'// tech stack'}</p>
-                <h2 className="feat-h2">Every dependency,<br />decoded and labeled</h2>
-                <p className="feat-desc">
-                  Beyond listing packages, RepoBrief understands the role each technology plays — framework, runtime, tooling, or security — so you know what matters.
-                </p>
-                <ul className="feat-points">
-                  {[
-                    { t: <><strong>Categorized automatically</strong> — languages, frameworks, tools, and infrastructure all grouped</> },
-                    { t: <><strong>Inferred from source</strong> — not just package.json, but actual usage patterns in code</> },
-                    { t: <><strong>Export to Markdown</strong> — paste your brief directly into a README, PR, or Notion doc</> },
-                  ].map((p,i) => (
-                    <li key={i} className="feat-point">
-                      <span className="feat-arrow">→</span><span>{p.t}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </section>
-
-          {/* 3 — Onboarding Guide */}
-          <section className="feat-section">
-            <div className="feat-inner">
-              <div>
-                <p className="feat-label">{'// onboarding'}</p>
-                <h2 className="feat-h2">From clone to<br />contributor, faster</h2>
-                <p className="feat-desc">
-                  Claude generates a step-by-step onboarding guide tailored to your specific repo — setup commands, environment requirements, and project conventions included.
-                </p>
-                <ul className="feat-points">
-                  {[
-                    { t: <><strong>Setup steps extracted</strong> from READMEs, Makefiles, docker-compose, and CI configs</> },
-                    { t: <><strong>Environment variables mapped</strong> — what&apos;s required, what&apos;s optional, what&apos;s secret</> },
-                    { t: <><strong>Works on any repo</strong> — public repos need no account, private repos use GitHub OAuth</> },
-                  ].map((p,i) => (
-                    <li key={i} className="feat-point">
-                      <span className="feat-arrow">→</span><span>{p.t}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <div className="feat-card">
-                  <div className="feat-card-head">
-                    <div className="feat-card-dot" />
-                    <span className="feat-card-title">◐ Onboarding Guide</span>
-                  </div>
-                  <div className="feat-card-body">
-                    <div className="onboard-list">
-                      {[
-                        {n:"1", title:"Clone the repository",    cmd:"git clone github.com/vercel/next.js", done:true},
-                        {n:"2", title:"Install dependencies",     cmd:"pnpm install",                       done:true},
-                        {n:"3", title:"Configure environment",    cmd:"cp .env.example .env.local",         done:true},
-                        {n:"4", title:"Start development server", cmd:"pnpm dev",                           done:false},
-                      ].map(s=>(
-                        <div key={s.n} className="onboard-step">
-                          <div className="step-num">{s.n}</div>
-                          <div className="step-body">
-                            <p className="step-title">{s.title}</p>
-                            <p className="step-cmd">{s.cmd}</p>
-                          </div>
-                          {s.done && <div className="step-done">✓</div>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
         </div>
+      </nav>
 
-        {/* ── DARK SECTION ── */}
-        <section className="lp-dark">
-          <div className="dark-inner">
-            <div>
-              <p className="dark-label">{'// built for developers'}</p>
-              <h2 className="dark-h2">Your codebase,<br />finally <em>legible</em></h2>
-              <p className="dark-desc">
-                Whether you&apos;re onboarding onto a new team, exploring open-source, or briefing a collaborator — RepoBrief turns thousands of lines into one clear, structured document.
-              </p>
-              <Link href="/auth" className="btn-coral">{GH_ICON} Get started free</Link>
+      {/* HERO */}
+      <section className="rb-hero">
+        <div className="rb-hero-grid" />
+        <div className="rb-hero-inner">
+          <div>
+            <div className="eyebrow">
+              <span className="eyebrow-dot" /> REPOBRIEF // ANALYSIS ENGINE
             </div>
-            <div className="dark-feats">
-              {[
-                {icon:"◎", title:"Repository description",  desc:"A jargon-free summary of what the project does and who it\u2019s for."},
-                {icon:"◈", title:"Architecture diagram",    desc:"Mermaid flowchart showing how modules, routes, and services connect."},
-                {icon:"◉", title:"File map",                desc:"The 15 most important files, each annotated with their purpose."},
-                {icon:"◐", title:"Onboarding guide",        desc:"Step-by-step setup with commands, env vars, and gotchas."},
-                {icon:"◑", title:"Live streaming output",   desc:"Watch the brief build in real time — no loading spinner."},
-                {icon:"◒", title:"Markdown export",         desc:"Copy the full brief as Markdown to paste anywhere."},
-              ].map(f=>(
-                <div key={f.title} className="dark-feat">
-                  <div className="dark-feat-icon">{f.icon}</div>
-                  <div className="dark-feat-info">
-                    <p className="dark-feat-title">{f.title}</p>
-                    <p className="dark-feat-desc">{f.desc}</p>
-                  </div>
+            <h1 className="rb-hero-title">
+              Understand any
+              <br />
+              codebase in <span className="serif slash">minutes,</span>
+              <br />
+              not weeks.
+            </h1>
+            <p className="rb-hero-sub">
+              Paste a GitHub repo. We map the architecture with Mermaid, extract
+              the tech stack, and write a plain-English brief — so you can ship
+              on day one instead of day thirty.
+            </p>
+            <div className="rb-hero-input-wrap">
+              <form
+                className="rb-hero-input-row"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  submitRepo(input);
+                }}
+              >
+                <div className="rb-hero-input-prefix">github.com/</div>
+                <input
+                  className="rb-hero-input"
+                  value={input}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    const match = heroExamples.find(
+                      (x) =>
+                        x.label.toLowerCase() ===
+                        e.target.value.toLowerCase().trim(),
+                    );
+                    if (match) setVariant(match.v);
+                  }}
+                  placeholder="owner/repository"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <button type="submit" className="rb-hero-analyze">
+                  analyze →
+                </button>
+              </form>
+              <div className="rb-hero-examples">
+                <span className="rb-hero-example-label">try:</span>
+                {heroExamples.map((ex) => (
+                  <button
+                    key={ex.label}
+                    type="button"
+                    className="rb-hero-example-pill"
+                    onClick={() => {
+                      setInput(ex.label);
+                      setVariant(ex.v);
+                    }}
+                  >
+                    {ex.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div>
+            <AnimatedDiagram variant={variant} live />
+          </div>
+        </div>
+      </section>
+
+      {/* MARQUEE */}
+      <div className="rb-marquee">
+        <div className="rb-marquee-track">
+          {[
+            "JavaScript",
+            "TypeScript",
+            "Python",
+            "Go",
+            "Rust",
+            "Ruby",
+            "Java",
+            "C++",
+            "Svelte",
+            "React",
+            "Vue",
+            "Django",
+            "Rails",
+            "Next.js",
+            "FastAPI",
+            "Elixir",
+            "Kotlin",
+          ]
+            .concat([
+              "JavaScript",
+              "TypeScript",
+              "Python",
+              "Go",
+              "Rust",
+              "Ruby",
+              "Java",
+              "C++",
+              "Svelte",
+              "React",
+              "Vue",
+              "Django",
+              "Rails",
+              "Next.js",
+              "FastAPI",
+              "Elixir",
+              "Kotlin",
+            ])
+            .map((s, i) => (
+              <span key={i}>{s}</span>
+            ))}
+        </div>
+      </div>
+
+      {/* HOW IT WORKS */}
+      <section id="how" className="rb-howto">
+        <div className="section-label">
+          <span>{"// 01 — HOW IT WORKS"}</span>
+          <div className="section-label-right">
+            <span>04 STEPS</span>
+            <span>≈ 90s</span>
+          </div>
+        </div>
+        <div className="rb-howto-head">
+          <div>
+            <div className="eyebrow">
+              <span className="eyebrow-dot" /> THE FLOW
+            </div>
+          </div>
+          <h2 className="section-title reveal">
+            From clone-URL to clarity in{" "}
+            <span className="serif accent">under two minutes.</span>
+          </h2>
+        </div>
+        <div className="rb-howto-grid">
+          {[
+            {
+              n: "01",
+              t: "Paste a URL",
+              d: "Any public GitHub repo. Or sign in with GitHub to browse your private ones — read-only, revoke anytime.",
+              v: (
+                <svg width="100%" height="60" viewBox="0 0 200 60">
+                  <rect
+                    x="1"
+                    y="18"
+                    width="198"
+                    height="28"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    opacity="0.4"
+                  />
+                  <text
+                    x="12"
+                    y="37"
+                    fontFamily="var(--font-jetbrains)"
+                    fontSize="10"
+                    fill="currentColor"
+                    opacity="0.6"
+                  >
+                    github.com/
+                  </text>
+                  <text
+                    x="78"
+                    y="37"
+                    fontFamily="var(--font-jetbrains)"
+                    fontSize="10"
+                    fill="var(--accent)"
+                  >
+                    owner/repo
+                  </text>
+                  <line
+                    x1="142"
+                    y1="24"
+                    x2="142"
+                    y2="40"
+                    stroke="var(--accent)"
+                    strokeWidth="1"
+                  >
+                    <animate
+                      attributeName="opacity"
+                      values="1;0;1"
+                      dur="1s"
+                      repeatCount="indefinite"
+                    />
+                  </line>
+                </svg>
+              ),
+            },
+            {
+              n: "02",
+              t: "We walk the tree",
+              d: "We parse the file graph, manifests, and imports — mapping modules, services, and their relationships.",
+              v: (
+                <svg width="100%" height="60" viewBox="0 0 200 60">
+                  <g
+                    fontFamily="var(--font-jetbrains)"
+                    fontSize="10"
+                    fill="currentColor"
+                    opacity="0.7"
+                  >
+                    <text x="4" y="14">
+                      └ src/
+                    </text>
+                    <text x="20" y="28">
+                      ├ api/
+                    </text>
+                    <text x="20" y="42">
+                      ├ lib/
+                    </text>
+                    <text x="20" y="56">
+                      └ ui/
+                    </text>
+                  </g>
+                  <rect
+                    x="2"
+                    y="4"
+                    width="80"
+                    height="12"
+                    fill="var(--accent)"
+                    opacity="0.2"
+                  />
+                </svg>
+              ),
+            },
+            {
+              n: "03",
+              t: "AI explains the why",
+              d: "Claude reads key files and writes a brief: what this app does, how it's structured, and where to start.",
+              v: (
+                <svg width="100%" height="60" viewBox="0 0 200 60">
+                  <line
+                    x1="4"
+                    y1="14"
+                    x2="180"
+                    y2="14"
+                    stroke="currentColor"
+                    strokeWidth="6"
+                    opacity="0.15"
+                  />
+                  <line
+                    x1="4"
+                    y1="14"
+                    x2="130"
+                    y2="14"
+                    stroke="var(--accent)"
+                    strokeWidth="6"
+                  />
+                  <line
+                    x1="4"
+                    y1="30"
+                    x2="150"
+                    y2="30"
+                    stroke="currentColor"
+                    strokeWidth="6"
+                    opacity="0.15"
+                  />
+                  <line
+                    x1="4"
+                    y1="30"
+                    x2="90"
+                    y2="30"
+                    stroke="var(--accent)"
+                    strokeWidth="6"
+                  />
+                  <line
+                    x1="4"
+                    y1="46"
+                    x2="160"
+                    y2="46"
+                    stroke="currentColor"
+                    strokeWidth="6"
+                    opacity="0.15"
+                  />
+                  <line
+                    x1="4"
+                    y1="46"
+                    x2="110"
+                    y2="46"
+                    stroke="var(--accent)"
+                    strokeWidth="6"
+                  />
+                </svg>
+              ),
+            },
+            {
+              n: "04",
+              t: "Ship on day one",
+              d: "Open the brief in your editor, share it with your team, or export the Mermaid diagram to your docs.",
+              v: (
+                <svg width="100%" height="60" viewBox="0 0 200 60">
+                  <rect
+                    x="2"
+                    y="10"
+                    width="40"
+                    height="40"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    opacity="0.4"
+                  />
+                  <rect
+                    x="50"
+                    y="10"
+                    width="40"
+                    height="40"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    opacity="0.4"
+                  />
+                  <rect
+                    x="98"
+                    y="10"
+                    width="40"
+                    height="40"
+                    fill="var(--accent)"
+                    opacity="0.25"
+                    stroke="var(--accent)"
+                    strokeWidth="1"
+                  />
+                  <text
+                    x="118"
+                    y="34"
+                    textAnchor="middle"
+                    fontFamily="var(--font-jetbrains)"
+                    fontSize="10"
+                    fill="currentColor"
+                  >
+                    .md
+                  </text>
+                  <path
+                    d="M 148 30 L 175 30 M 170 25 L 175 30 L 170 35"
+                    stroke="var(--accent)"
+                    strokeWidth="1.5"
+                    fill="none"
+                  />
+                </svg>
+              ),
+            },
+          ].map((s) => (
+            <div className="rb-step reveal" key={s.n}>
+              <div className="rb-step-num">{s.n}</div>
+              <h3 className="rb-step-title">{s.t}</h3>
+              <p className="rb-step-desc">{s.d}</p>
+              <div className="rb-step-visual">{s.v}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section id="features" className="rb-features">
+        <div className="section-label">
+          <span>{"// 02 — FEATURES"}</span>
+          <div className="section-label-right">
+            <span>06 MODULES</span>
+          </div>
+        </div>
+        <div className="rb-features-head">
+          <div>
+            <div className="eyebrow">
+              <span className="eyebrow-dot" /> WHAT YOU GET
+            </div>
+          </div>
+          <h2 className="section-title reveal">
+            Six tools that turn a repo into a{" "}
+            <span className="serif accent">full onboarding doc.</span>
+          </h2>
+        </div>
+        <div className="rb-features-grid">
+          {[
+            {
+              l: "MODULE 01",
+              t: "Live architecture map",
+              d: "Auto-generated Mermaid diagrams show how modules and services actually connect — rendered, not guessed.",
+              g: (
+                <svg width="160" height="88" viewBox="0 0 160 88">
+                  <rect
+                    x="60"
+                    y="4"
+                    width="40"
+                    height="16"
+                    fill="var(--accent)"
+                    opacity="0.25"
+                    stroke="var(--accent)"
+                  />
+                  <rect
+                    x="10"
+                    y="36"
+                    width="40"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    opacity="0.6"
+                  />
+                  <rect
+                    x="60"
+                    y="36"
+                    width="40"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    opacity="0.6"
+                  />
+                  <rect
+                    x="110"
+                    y="36"
+                    width="40"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    opacity="0.6"
+                  />
+                  <rect
+                    x="60"
+                    y="68"
+                    width="40"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    opacity="0.6"
+                  />
+                  <line
+                    x1="80"
+                    y1="20"
+                    x2="30"
+                    y2="36"
+                    stroke="currentColor"
+                    opacity="0.4"
+                  />
+                  <line
+                    x1="80"
+                    y1="20"
+                    x2="80"
+                    y2="36"
+                    stroke="currentColor"
+                    opacity="0.4"
+                  />
+                  <line
+                    x1="80"
+                    y1="20"
+                    x2="130"
+                    y2="36"
+                    stroke="currentColor"
+                    opacity="0.4"
+                  />
+                  <line
+                    x1="80"
+                    y1="52"
+                    x2="80"
+                    y2="68"
+                    stroke="currentColor"
+                    opacity="0.4"
+                  />
+                </svg>
+              ),
+            },
+            {
+              l: "MODULE 02",
+              t: "Tech stack, dated",
+              d: "Every framework, library, database, and runtime — with versions, license flags, and freshness indicators.",
+              g: (
+                <svg width="180" height="88" viewBox="0 0 180 88">
+                  {[
+                    "React 19.0.1",
+                    "Next.js 15.2",
+                    "Prisma 5.8",
+                    "PostgreSQL 16",
+                  ].map((t, i) => (
+                    <g key={t}>
+                      <rect
+                        x="4"
+                        y={6 + i * 20}
+                        width="172"
+                        height="14"
+                        fill="none"
+                        stroke="currentColor"
+                        opacity="0.25"
+                      />
+                      <text
+                        x="10"
+                        y={16 + i * 20}
+                        fontFamily="var(--font-jetbrains)"
+                        fontSize="9"
+                        fill="currentColor"
+                      >
+                        {t}
+                      </text>
+                      <circle
+                        cx="168"
+                        cy={13 + i * 20}
+                        r="2"
+                        fill="var(--accent)"
+                      />
+                    </g>
+                  ))}
+                </svg>
+              ),
+            },
+            {
+              l: "MODULE 03",
+              t: "Plain-English brief",
+              d: "An AI-written overview: what the repo does, how data flows, which files matter, and how to run it locally.",
+              g: (
+                <svg width="160" height="88" viewBox="0 0 160 88">
+                  <line
+                    x1="4"
+                    y1="10"
+                    x2="80"
+                    y2="10"
+                    stroke="var(--accent)"
+                    strokeWidth="2"
+                  />
+                  {[20, 32, 44, 56, 68, 80].map((y, i) => (
+                    <line
+                      key={y}
+                      x1="4"
+                      y1={y}
+                      x2={4 + 80 + (i % 3) * 25}
+                      y2={y}
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      opacity={0.2 + (i % 2) * 0.15}
+                    />
+                  ))}
+                </svg>
+              ),
+            },
+            {
+              l: "MODULE 04",
+              t: "File heatmap",
+              d: "See which files are the beating heart of the codebase — by commit density, imports, and coupling.",
+              g: (
+                <svg width="180" height="88" viewBox="0 0 180 88">
+                  {Array.from({ length: 60 }).map((_, i) => {
+                    const x = 4 + (i % 15) * 12;
+                    const y = 4 + Math.floor(i / 15) * 20;
+                    const op = ((i * 37) % 100) / 100;
+                    return (
+                      <rect
+                        key={i}
+                        x={x}
+                        y={y}
+                        width="9"
+                        height="16"
+                        fill="var(--accent)"
+                        opacity={op * 0.9 + 0.05}
+                      />
+                    );
+                  })}
+                </svg>
+              ),
+            },
+            {
+              l: "MODULE 05",
+              t: "Dependency graph",
+              d: "Go beyond package.json. We trace real imports to surface what each module actually depends on.",
+              g: (
+                <svg width="160" height="88" viewBox="0 0 160 88">
+                  {[
+                    [30, 20],
+                    [80, 12],
+                    [130, 28],
+                    [50, 50],
+                    [110, 60],
+                    [80, 75],
+                  ].map(([x, y], i) => (
+                    <circle
+                      key={i}
+                      cx={x}
+                      cy={y}
+                      r={i === 1 ? 6 : 4}
+                      fill={i === 1 ? "var(--accent)" : "currentColor"}
+                      opacity={i === 1 ? 1 : 0.5}
+                    />
+                  ))}
+                  {[
+                    [30, 20, 80, 12],
+                    [80, 12, 130, 28],
+                    [80, 12, 50, 50],
+                    [80, 12, 110, 60],
+                    [50, 50, 80, 75],
+                    [110, 60, 80, 75],
+                  ].map(([x1, y1, x2, y2], i) => (
+                    <line
+                      key={i}
+                      x1={x1}
+                      y1={y1}
+                      x2={x2}
+                      y2={y2}
+                      stroke="currentColor"
+                      opacity="0.3"
+                    />
+                  ))}
+                </svg>
+              ),
+            },
+            {
+              l: "MODULE 06",
+              t: "Export everything",
+              d: "Markdown, JSON, raw Mermaid, or a shareable link. Drop the brief straight into your team docs.",
+              g: (
+                <svg width="180" height="88" viewBox="0 0 180 88">
+                  {["markdown", "mermaid", "json", "link"].map((t, i) => (
+                    <g key={t}>
+                      <rect
+                        x={4 + i * 44}
+                        y="28"
+                        width="40"
+                        height="32"
+                        fill="none"
+                        stroke="currentColor"
+                        opacity="0.4"
+                      />
+                      <text
+                        x={24 + i * 44}
+                        y="48"
+                        textAnchor="middle"
+                        fontFamily="var(--font-jetbrains)"
+                        fontSize="8"
+                        fill="currentColor"
+                      >
+                        .{t}
+                      </text>
+                    </g>
+                  ))}
+                </svg>
+              ),
+            },
+          ].map((f) => (
+            <div className="rb-feature reveal" key={f.l}>
+              <div className="rb-feature-label">{f.l}</div>
+              <h3 className="rb-feature-title">{f.t}</h3>
+              <p className="rb-feature-desc">{f.d}</p>
+              <div className="rb-feature-glyph">{f.g}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* LIVE DEMO */}
+      <section id="demo" className="rb-demo">
+        <div className="section-label">
+          <span>{"// 03 — LIVE DEMO"}</span>
+          <div className="section-label-right">
+            <span>INTERACTIVE</span>
+          </div>
+        </div>
+        <div className="rb-demo-head">
+          <div>
+            <div className="eyebrow">
+              <span className="eyebrow-dot" /> TRY IT WITHOUT SIGNING IN
+            </div>
+          </div>
+          <h2 className="section-title reveal">
+            Pick a repo. Watch <span className="serif accent">it unpack.</span>
+          </h2>
+        </div>
+        <div className="rb-demo-wrap">
+          <div className="rb-demo-tabs">
+            {DEMO_REPOS.map((r, i) => (
+              <button
+                key={r.name}
+                className={`rb-demo-tab ${i === demoIdx ? "active" : ""}`}
+                onClick={() => setDemoIdx(i)}
+              >
+                <span className="rb-demo-tab-repo">{r.name}</span>
+                <span className="rb-demo-tab-lang">
+                  {r.lang.toUpperCase()} · ★ {r.stars}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="rb-demo-panel">
+            <div className="rb-demo-col">
+              <div className="rb-demo-col-title">
+                TECH STACK <span>{Object.keys(demo.stack).length} groups</span>
+              </div>
+              {Object.entries(demo.stack).map(([group, items]) => (
+                <div className="stack-group" key={group}>
+                  <div className="stack-group-label">{group}</div>
+                  {items.map((it) => (
+                    <div className="stack-item" key={it.n}>
+                      <span className="stack-item-name">{it.n}</span>
+                      <span className="stack-item-v">{it.v}</span>
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
-          </div>
-        </section>
-
-        {/* ── PRICING ── */}
-        <section id="pricing" className="lp-pricing">
-          <div className="pricing-inner">
-            <p className="pricing-label">{'// pricing'}</p>
-            <h2 className="pricing-h2">Simple,<br />transparent</h2>
-            <div className="pricing-grid">
-              <div className="price-card">
-                <div className="price-tier">Free</div>
-                <div className="price-amount">$0</div>
-                <p className="price-period">per month</p>
-                <ul className="price-list">
-                  {["5 analyses / month","Public repositories","7-day shareable link","Export as Markdown","Live streaming output"].map(f=>(
-                    <li key={f} className="price-item on"><span className="price-check">✓</span>{f}</li>
-                  ))}
-                  {["Private repositories","API access"].map(f=>(
-                    <li key={f} className="price-item"><span className="price-cross">✗</span>{f}</li>
-                  ))}
-                </ul>
-                <Link href="/auth" className="price-btn">Get started free</Link>
+            <div className="rb-demo-col" style={{ padding: 0 }}>
+              <div style={{ padding: "24px 24px 8px" }}>
+                <div className="rb-demo-col-title">
+                  ARCHITECTURE <span>auto-generated</span>
+                </div>
               </div>
-              <div className="price-card pro">
-                <div className="price-tier">Pro <span className="coming-badge">coming soon</span></div>
-                <div className="price-amount">$9</div>
-                <p className="price-period">per month</p>
-                <ul className="price-list">
-                  {["Unlimited analyses","Public + private repos","Permanent shareable links","Export as Markdown","API access","Priority support","Early access to features"].map(f=>(
-                    <li key={f} className="price-item on"><span className="price-check">✓</span>{f}</li>
-                  ))}
-                </ul>
-                <div className="price-btn-disabled">Coming soon</div>
+              <div
+                style={{ padding: "0 12px 12px", height: "calc(100% - 60px)" }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    border: "1px solid var(--line-soft)",
+                  }}
+                >
+                  <AnimatedDiagram variant={demoIdx} live={false} />
+                </div>
+              </div>
+            </div>
+            <div className="rb-demo-col">
+              <div className="rb-demo-col-title">
+                AI BRIEF <span>claude 4.5</span>
+              </div>
+              <div className="ai-summary">{demo.summary}</div>
+              <div style={{ marginTop: 24 }}>
+                <div className="rb-demo-col-title">METRICS</div>
+                {demo.metrics.map(([k, v]) => (
+                  <div className="ai-metric" key={k}>
+                    <span style={{ color: "var(--ink-muted)" }}>{k}</span>
+                    <span className="ai-metric-v">{v}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ── FOOTER ── */}
-        <footer className="lp-footer">
-          <Link href="/" className="footer-logo">Repo<em>Brief</em></Link>
-          <div className="footer-links">
-            <a href="https://github.com/DoganayBalaban/repobrief" target="_blank" rel="noopener noreferrer" className="footer-link">GitHub</a>
-            <a href="#pricing" className="footer-link">Pricing</a>
+      {/* PREVIEW */}
+      <section className="rb-preview">
+        <div className="section-label">
+          <span>{"// 04 — OUTPUT"}</span>
+          <div className="section-label-right">
+            <span>MARKDOWN · MERMAID</span>
           </div>
-          <span className="footer-built">built with claude + next.js</span>
-        </footer>
+        </div>
+        <div className="rb-preview-head">
+          <div>
+            <div className="eyebrow">
+              <span className="eyebrow-dot" /> WHAT YOU EXPORT
+            </div>
+          </div>
+          <h2 className="section-title reveal">
+            One command. Two files.{" "}
+            <span className="serif accent">A full onboarding.</span>
+          </h2>
+        </div>
+        <div className="rb-preview-grid">
+          <div className="code-card reveal">
+            <div className="code-card-head">
+              <span>architecture.mmd</span>
+              <span>MERMAID · 42 LINES</span>
+            </div>
+            <div className="code-card-body">
+              <pre>
+                <span className="c-k">graph</span> TD{"\n"}
+                {"  "}A[<span className="c-s">app/</span>] --&gt; B[
+                <span className="c-s">api/</span>]{"\n"}
+                {"  "}A --&gt; C[<span className="c-s">components/</span>]{"\n"}
+                {"  "}A --&gt; D[<span className="c-s">lib/</span>]{"\n"}
+                {"\n"}
+                {"  "}B --&gt; E[<span className="c-s">routes/</span>]{"\n"}
+                {"  "}B --&gt; F[<span className="c-s">middleware/</span>]{"\n"}
+                {"  "}C --&gt; G[<span className="c-s">ui/</span>]{"\n"}
+                {"  "}C --&gt; H[<span className="c-s">forms/</span>]{"\n"}
+                {"  "}D --&gt; I[<span className="c-s">db.ts</span>]{"\n"}
+                {"  "}D --&gt; J[<span className="c-s">auth.ts</span>]{"\n"}
+                {"\n"}
+                {"  "}I --&gt; K[(PostgreSQL)]{"\n"}
+                {"  "}J --&gt; L[(Clerk)]{"\n"}
+                {"\n"}
+                {"  "}
+                <span className="c-c">%% generated by repobrief v0.4</span>
+                {"\n"}
+                {"  "}
+                <span className="c-c">%% commit: a7f3d2e · 2026-04-18</span>
+              </pre>
+            </div>
+          </div>
+          <div className="code-card reveal">
+            <div className="code-card-head">
+              <span>brief.md</span>
+              <span>MARKDOWN · 184 LINES</span>
+            </div>
+            <div className="code-card-body">
+              <pre>
+                <span className="c-k"># acme-dashboard</span>
+                {"\n\n"}A multi-tenant admin panel built on Next.js 15 with
+                {"\n"}
+                server components, Prisma, and Clerk for auth.{"\n\n"}
+                <span className="c-k">## tl;dr</span>
+                {"\n\n"}- Renders on Node.js runtime, not edge{"\n"}- Data
+                layer: Prisma → PostgreSQL (AWS RDS){"\n"}- Auth: Clerk (see{" "}
+                <span className="c-s">lib/auth.ts</span>){"\n"}- Billing: Stripe
+                Subscriptions{"\n\n"}
+                <span className="c-k">## where to start</span>
+                {"\n\n"}
+                Read <span className="c-s">
+                  app/(dashboard)/layout.tsx
+                </span>{" "}
+                first —{"\n"}
+                it wires auth, tenant context, and nav. All feature{"\n"}
+                routes live under{" "}
+                <span className="c-s">app/(dashboard)/[org]/</span>.{"\n\n"}
+                <span className="c-k">## how to run</span>
+                {"\n\n"}
+                <span className="c-s">
+                  pnpm install{"\n"}pnpm db:push{"\n"}pnpm dev
+                </span>
+              </pre>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      </div>
-    </>
+      {/* PRICING */}
+      <section id="pricing" className="rb-pricing">
+        <div className="section-label">
+          <span>{"// 05 — PRICING"}</span>
+          <div className="section-label-right">
+            <span>3 TIERS</span>
+          </div>
+        </div>
+        <div className="rb-pricing-head">
+          <div>
+            <div className="eyebrow">
+              <span className="eyebrow-dot" /> PAY FOR WHAT YOU SHIP
+            </div>
+          </div>
+          <h2 className="section-title reveal">
+            Free to try. <span className="serif accent">Honest to scale.</span>
+          </h2>
+        </div>
+        <div className="rb-pricing-grid">
+          {[
+            {
+              tier: "HOBBY",
+              price: "0",
+              per: "/ forever",
+              desc: "For curious developers exploring open-source codebases.",
+              features: [
+                "10 public repo analyses / month",
+                "Architecture diagram (Mermaid)",
+                "AI brief (short form)",
+                "Markdown export",
+              ],
+              cta: "Start free",
+              ctaClass: "btn",
+              featured: false,
+            },
+            {
+              tier: "PRO",
+              price: "18",
+              per: "/ month",
+              desc: "For engineers onboarding to new jobs, contractors, and reviewers.",
+              features: [
+                "Unlimited public + private repos",
+                "Full brief + dependency graph",
+                "File heatmap + code owners",
+                "JSON / Mermaid / PDF export",
+                "Priority analysis queue",
+              ],
+              cta: "Start 14-day trial",
+              ctaClass: "btn btn-accent",
+              featured: true,
+            },
+            {
+              tier: "TEAM",
+              price: "Custom",
+              per: "",
+              desc: "For engineering teams onboarding together or auditing inherited code.",
+              features: [
+                "Everything in Pro",
+                "Shared workspace + comments",
+                "SAML / SSO",
+                "On-prem deploy option",
+                "Dedicated support",
+              ],
+              cta: "Book a call",
+              ctaClass: "btn",
+              featured: false,
+            },
+          ].map((t) => (
+            <div
+              key={t.tier}
+              className={`rb-price-card ${t.featured ? "featured" : ""} reveal`}
+            >
+              <div className="price-tier">
+                {t.tier}{" "}
+                {t.featured && (
+                  <span style={{ color: "var(--accent)" }}>· POPULAR</span>
+                )}
+              </div>
+              <div className="price-value">
+                {t.price === "Custom" ? (
+                  <span style={{ fontSize: 36 }}>Custom</span>
+                ) : (
+                  <>
+                    <sup>$</sup>
+                    {t.price}
+                    <small>{t.per}</small>
+                  </>
+                )}
+              </div>
+              <div className="price-desc">{t.desc}</div>
+              <ul className="price-list">
+                {t.features.map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
+              </ul>
+              <div className="price-cta">
+                <Link href="/auth" className={t.ctaClass}>
+                  {t.cta} →
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="rb-faq">
+        <div className="section-label">
+          <span>{"// 06 — FAQ"}</span>
+          <div className="section-label-right">
+            <span>06 ITEMS</span>
+          </div>
+        </div>
+        <div className="rb-faq-head">
+          <div>
+            <div className="eyebrow">
+              <span className="eyebrow-dot" /> QUESTIONS
+            </div>
+          </div>
+          <h2 className="section-title reveal">
+            Things people ask{" "}
+            <span className="serif accent">before signing up.</span>
+          </h2>
+        </div>
+        <div className="rb-faq-list">
+          {FAQ_ITEMS.map((it, i) => (
+            <div
+              key={i}
+              className={`rb-faq-item ${faqOpen === i ? "open" : ""}`}
+            >
+              <button
+                className="rb-faq-q"
+                onClick={() => setFaqOpen(faqOpen === i ? -1 : i)}
+              >
+                <span>{it.q}</span>
+                <span className="rb-faq-q-toggle">+</span>
+              </button>
+              <div className="rb-faq-a">{it.a}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="rb-cta-final">
+        <div className="rb-cta-final-inner">
+          <div>
+            <h2 className="rb-cta-final-title">
+              Stop reading
+              <br />
+              codebases.{" "}
+              <em>
+                Start
+                <br />
+                shipping in them.
+              </em>
+            </h2>
+            <p className="rb-cta-final-sub">
+              Connect your GitHub and turn your next unfamiliar repo into a
+              brief in 90 seconds. Free to try.
+            </p>
+          </div>
+          <div style={{ justifySelf: "end" }}>
+            <Link href="/auth" className="rb-cta-final-btn">
+              <span style={{ fontSize: 16 }}>◉</span>
+              Connect GitHub → Analyze a repo
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="rb-footer">
+        <div className="rb-footer-inner">
+          <div>
+            <div className="rb-logo">
+              <div className="rb-logo-mark">R</div>
+              <span>repobrief</span>
+            </div>
+            <p className="rb-footer-brand-desc">
+              Read any codebase in minutes. Built for engineers who&apos;d
+              rather ship than spelunk.
+            </p>
+          </div>
+          <div className="rb-footer-col">
+            <div className="rb-footer-col-title">Product</div>
+            <ul>
+              <li>
+                <a href="#features">Features</a>
+              </li>
+              <li>
+                <a href="#pricing">Pricing</a>
+              </li>
+              <li>
+                <a href="#demo">Demo</a>
+              </li>
+              <li>
+                <a href="#faq">FAQ</a>
+              </li>
+            </ul>
+          </div>
+          <div className="rb-footer-col">
+            <div className="rb-footer-col-title">Company</div>
+            <ul>
+              <li>
+                <a href="#">About</a>
+              </li>
+              <li>
+                <a href="#">Blog</a>
+              </li>
+              <li>
+                <a href="#">Careers</a>
+              </li>
+              <li>
+                <a href="#">Contact</a>
+              </li>
+            </ul>
+          </div>
+          <div className="rb-footer-col">
+            <div className="rb-footer-col-title">Resources</div>
+            <ul>
+              <li>
+                <a
+                  href="https://github.com/DoganayBalaban/repobrief"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  GitHub
+                </a>
+              </li>
+              <li>
+                <a href="#">Docs</a>
+              </li>
+              <li>
+                <a href="#">API</a>
+              </li>
+              <li>
+                <a href="#">Security</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div className="rb-footer-bottom">
+          <span>© 2026 REPOBRIEF // ALL RIGHTS RESERVED</span>
+          <span>MADE WITH ◆ IN ISTANBUL</span>
+        </div>
+      </footer>
+    </div>
   );
 }

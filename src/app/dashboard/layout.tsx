@@ -1,6 +1,7 @@
 import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { DashNavLinks } from "@/components/dash-nav-links";
 
 export default async function DashboardLayout({
   children,
@@ -95,10 +96,7 @@ export default async function DashboardLayout({
           <div className="dash-nav-inner">
             <div style={{ display: "flex", alignItems: "center" }}>
               <Link href="/dashboard" className="dash-logo">Repo<em>Brief</em></Link>
-              <div className="dash-nav-links">
-                <Link href="/dashboard" className="dash-nav-link active">Repositories</Link>
-                <Link href="/dashboard/analyses" className="dash-nav-link">My analyses</Link>
-              </div>
+              <DashNavLinks />
             </div>
 
             <div className="dash-user">
