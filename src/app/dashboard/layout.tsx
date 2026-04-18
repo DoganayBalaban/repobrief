@@ -13,80 +13,91 @@ export default async function DashboardLayout({
   return (
     <>
       <style>{`
+        :root {
+          --bg:      #faf9f6;
+          --bg-alt:  #f2f1ec;
+          --text:    #0f0e0d;
+          --muted:   #6d6c65;
+          --dim:     #a8a7a0;
+          --coral:   #d97757;
+          --coral-dim: rgba(217,119,87,0.11);
+          --border:  rgba(0,0,0,0.07);
+          --serif:   var(--font-playfair), Georgia, serif;
+          --sans:    var(--font-dm-sans), system-ui, sans-serif;
+          --mono:    var(--font-dm-mono), ui-monospace, monospace;
+        }
+        body { background: var(--bg); color: var(--text); font-family: var(--sans); }
+
         .dash-layout {
-          display: grid;
-          grid-template-rows: auto 1fr;
-          min-height: 100vh;
-          background: #09090b;
+          display: grid; grid-template-rows: auto 1fr;
+          min-height: 100vh; background: var(--bg);
         }
         .dash-nav {
-          border-bottom: 1px solid rgba(255,255,255,0.06);
-          background: rgba(9,9,11,0.95);
-          backdrop-filter: blur(8px);
+          border-bottom: 1px solid var(--border);
+          background: rgba(250,249,246,0.92);
+          backdrop-filter: blur(14px);
           position: sticky; top: 0; z-index: 50;
         }
         .dash-nav-inner {
           max-width: 1100px; margin: 0 auto;
           display: flex; align-items: center; justify-content: space-between;
-          padding: 0 24px; height: 52px;
+          padding: 0 24px; height: 58px;
         }
         .dash-logo {
-          font-family: ui-monospace, monospace;
-          font-size: 13px; letter-spacing: 0.1em;
-          text-transform: uppercase; text-decoration: none;
-          color: #f4f4f5;
+          font-family: var(--serif);
+          font-size: 17px; font-weight: 700; letter-spacing: -0.02em;
+          color: var(--text); text-decoration: none;
         }
-        .dash-logo span { color: #a3e635; }
+        .dash-logo em { color: var(--coral); font-style: italic; }
         .dash-nav-links {
-          display: flex; align-items: center; gap: 4px;
+          display: flex; align-items: center; gap: 2px; margin-left: 20px;
         }
-        .nav-link {
-          font-family: ui-monospace, monospace; font-size: 11px;
-          color: #71717a; text-decoration: none;
-          padding: 5px 10px; border-radius: 4px;
-          transition: color .15s ease, background .15s ease;
-          border: 1px solid transparent;
+        .dash-nav-link {
+          font-size: 13px; color: var(--muted);
+          text-decoration: none; padding: 5px 12px; border-radius: 6px;
+          transition: color .15s, background .15s;
         }
-        .nav-link:hover { color: #e4e4e7; background: rgba(255,255,255,0.04); }
-        .nav-link.active { color: #e4e4e7; border-color: rgba(255,255,255,0.08); }
+        .dash-nav-link:hover { color: var(--text); background: rgba(0,0,0,0.04); }
+        .dash-nav-link.active { color: var(--text); background: rgba(0,0,0,0.05); }
         .dash-user {
           display: flex; align-items: center; gap: 10px;
         }
         .user-avatar {
           width: 26px; height: 26px;
-          border-radius: 50%; border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 50%; border: 1px solid var(--border);
         }
         .user-name {
-          font-family: ui-monospace, monospace; font-size: 11px;
-          color: #52525b;
+          font-size: 13px; color: var(--muted);
         }
         .signout-btn {
-          font-family: ui-monospace, monospace; font-size: 11px;
-          color: #52525b; background: none; border: 1px solid rgba(255,255,255,0.07);
-          padding: 4px 10px; border-radius: 4px; cursor: pointer;
-          transition: color .15s, border-color .15s;
+          font-size: 13px; color: var(--muted);
+          background: none; border: 1px solid var(--border);
+          padding: 5px 12px; border-radius: 6px; cursor: pointer;
+          transition: color .15s, border-color .15s, background .15s;
+          font-family: var(--sans);
         }
-        .signout-btn:hover { color: #a1a1aa; border-color: rgba(255,255,255,0.15); }
+        .signout-btn:hover {
+          color: var(--text); border-color: rgba(0,0,0,0.14);
+          background: rgba(0,0,0,0.03);
+        }
         .dash-main {
           max-width: 1100px; margin: 0 auto;
-          width: 100%; padding: 32px 24px;
+          width: 100%; padding: 36px 24px;
+        }
+        @media (max-width: 600px) {
+          .user-name { display: none; }
+          .dash-main { padding: 24px 16px; }
         }
       `}</style>
 
       <div className="dash-layout">
         <nav className="dash-nav">
           <div className="dash-nav-inner">
-            <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-              <Link href="/dashboard" className="dash-logo">
-                repo<span>brief</span>
-              </Link>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <Link href="/dashboard" className="dash-logo">Repo<em>Brief</em></Link>
               <div className="dash-nav-links">
-                <Link href="/dashboard" className="nav-link active">
-                  repositories
-                </Link>
-                <Link href="/dashboard/analyses" className="nav-link">
-                  my analyses
-                </Link>
+                <Link href="/dashboard" className="dash-nav-link active">Repositories</Link>
+                <Link href="/dashboard/analyses" className="dash-nav-link">My analyses</Link>
               </div>
             </div>
 
@@ -106,7 +117,7 @@ export default async function DashboardLayout({
                   await signOut({ redirectTo: "/" });
                 }}
               >
-                <button type="submit" className="signout-btn">sign out</button>
+                <button type="submit" className="signout-btn">Sign out</button>
               </form>
             </div>
           </div>

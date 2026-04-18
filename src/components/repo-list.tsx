@@ -57,9 +57,7 @@ export function RepoList({ repos }: RepoListProps) {
 
   const languages = useMemo(() => {
     const set = new Set<string>();
-    for (const r of repos) {
-      if (r.language) set.add(r.language);
-    }
+    for (const r of repos) if (r.language) set.add(r.language);
     return Array.from(set).sort();
   }, [repos]);
 
@@ -80,179 +78,179 @@ export function RepoList({ repos }: RepoListProps) {
   return (
     <>
       <style>{`
-        .filter-bar {
+        .rl-filter-bar {
           display: flex; gap: 8px; margin-bottom: 16px;
         }
-        .search-input {
+        .rl-search {
           flex: 1; min-width: 0;
-          padding: 7px 12px;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.07);
-          border-radius: 4px;
-          font-family: ui-monospace, monospace; font-size: 12px;
-          color: #e4e4e7; outline: none;
+          padding: 9px 14px;
+          background: #fff;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          font-family: var(--mono); font-size: 12px;
+          color: var(--text); outline: none;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
           transition: border-color .15s;
         }
-        .search-input::placeholder { color: #3f3f46; }
-        .search-input:focus { border-color: rgba(163,230,53,0.3); }
-        .lang-select {
-          padding: 7px 28px 7px 10px;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.07);
-          border-radius: 4px;
-          font-family: ui-monospace, monospace; font-size: 11px;
-          color: #71717a; outline: none; cursor: pointer;
-          transition: border-color .15s, color .15s;
+        .rl-search::placeholder { color: var(--dim); }
+        .rl-search:focus { border-color: rgba(217,119,87,0.4); }
+        .rl-select {
+          padding: 9px 32px 9px 12px;
+          background: #fff;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          font-family: var(--mono); font-size: 11px;
+          color: var(--muted); outline: none; cursor: pointer;
           appearance: none; -webkit-appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2352525b'/%3E%3C/svg%3E");
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23a8a7a0'/%3E%3C/svg%3E");
           background-repeat: no-repeat;
           background-position: right 10px center;
-          background-color: rgba(255,255,255,0.04);
+          background-color: #fff;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+          transition: border-color .15s;
         }
-        .lang-select option { background: #09090b; color: #e4e4e7; }
-        .lang-select:focus { border-color: rgba(163,230,53,0.3); color: #a3e635; }
-        .repos-header {
+        .rl-select:focus { border-color: rgba(217,119,87,0.4); color: var(--text); }
+        .rl-select option { background: #fff; color: var(--text); }
+
+        .rl-header {
           display: flex; align-items: baseline; justify-content: space-between;
-          margin-bottom: 20px;
+          margin-bottom: 12px;
         }
-        .repos-title {
-          font-size: 15px; font-weight: 700; letter-spacing: -0.02em; color: #e4e4e7;
+        .rl-title {
+          font-family: var(--serif);
+          font-size: 1.4rem; font-weight: 700;
+          letter-spacing: -0.02em; color: var(--text);
         }
-        .repos-count {
-          font-family: ui-monospace, monospace; font-size: 11px; color: #52525b;
+        .rl-count {
+          font-family: var(--mono); font-size: 11px; color: var(--dim);
         }
-        .repo-list { display: flex; flex-direction: column; gap: 2px; }
-        .repo-card {
+
+        .rl-list { display: flex; flex-direction: column; gap: 2px; }
+        .rl-card {
           display: flex; align-items: center; justify-content: space-between;
           gap: 16px; padding: 14px 16px;
-          border: 1px solid rgba(255,255,255,0.05);
-          border-radius: 4px;
-          background: rgba(255,255,255,0.015);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          background: #fff;
           text-decoration: none;
-          transition: border-color .15s, background .15s;
-          cursor: pointer;
+          transition: border-color .15s, background .15s, box-shadow .15s;
         }
-        .repo-card:hover {
-          border-color: rgba(163,230,53,0.2);
-          background: rgba(163,230,53,0.025);
+        .rl-card:hover {
+          border-color: rgba(217,119,87,0.3);
+          background: rgba(217,119,87,0.025);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-        .repo-left { min-width: 0; flex: 1; }
-        .repo-name {
-          font-size: 13px; font-weight: 600; color: #e4e4e7;
+        .rl-left { min-width: 0; flex: 1; }
+        .rl-name {
+          font-size: 13px; font-weight: 600; color: var(--text);
           letter-spacing: -0.01em; white-space: nowrap;
           overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px;
         }
-        .repo-desc {
-          font-family: ui-monospace, monospace; font-size: 11px; color: #52525b;
+        .rl-desc {
+          font-family: var(--mono); font-size: 11px; color: var(--dim);
           white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        .repo-right {
+        .rl-right {
           display: flex; align-items: center; gap: 12px; flex-shrink: 0;
         }
-        .repo-lang {
+        .rl-private {
+          font-family: var(--mono); font-size: 10px;
+          color: var(--coral); border: 1px solid rgba(217,119,87,0.25);
+          background: var(--coral-dim);
+          padding: 1px 7px; border-radius: 4px;
+        }
+        .rl-lang {
           display: flex; align-items: center; gap: 5px;
-          font-family: ui-monospace, monospace; font-size: 11px; color: #71717a;
+          font-family: var(--mono); font-size: 11px; color: var(--muted);
         }
         .lang-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-        .repo-stars {
-          font-family: ui-monospace, monospace; font-size: 11px; color: #52525b;
+        .rl-stars {
+          font-family: var(--mono); font-size: 11px; color: var(--dim);
           display: flex; align-items: center; gap: 3px;
         }
-        .repo-time {
-          font-family: ui-monospace, monospace; font-size: 11px; color: #3f3f46;
+        .rl-time {
+          font-family: var(--mono); font-size: 11px; color: var(--dim);
           min-width: 52px; text-align: right;
         }
-        .repo-private {
-          font-family: ui-monospace, monospace; font-size: 10px;
-          color: #a3e635; border: 1px solid rgba(163,230,53,0.2);
-          padding: 1px 6px; border-radius: 3px;
-        }
-        .repo-arrow { color: #3f3f46; font-size: 12px; }
-        .empty-filter {
-          padding: 40px 0;
+        .rl-arrow { color: var(--dim); font-size: 12px; }
+
+        .rl-empty {
+          padding: 48px 0;
           display: flex; flex-direction: column; align-items: center; gap: 12px;
         }
-        .empty-filter-label {
-          font-family: ui-monospace, monospace; font-size: 12px; color: #3f3f46;
+        .rl-empty-label {
+          font-family: var(--mono); font-size: 12px; color: var(--dim);
         }
-        .clear-btn {
-          font-family: ui-monospace, monospace; font-size: 11px; color: #52525b;
-          background: none; border: 1px solid rgba(255,255,255,0.07);
-          padding: 4px 12px; border-radius: 4px; cursor: pointer;
+        .rl-clear {
+          font-family: var(--mono); font-size: 11px; color: var(--muted);
+          background: none; border: 1px solid var(--border);
+          padding: 5px 14px; border-radius: 6px; cursor: pointer;
           transition: color .15s, border-color .15s;
         }
-        .clear-btn:hover { color: #a3e635; border-color: rgba(163,230,53,0.2); }
+        .rl-clear:hover { color: var(--text); border-color: rgba(0,0,0,0.15); }
       `}</style>
 
-      <div className="filter-bar">
+      <div className="rl-filter-bar">
         <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="search repos…"
-          className="search-input"
+          placeholder="Search repositories…"
+          className="rl-search"
         />
         <select
           value={lang}
           onChange={(e) => setLang(e.target.value)}
-          className="lang-select"
+          className="rl-select"
           disabled={languages.length === 0}
         >
-          <option value="all">all languages</option>
+          <option value="all">All languages</option>
           {languages.map((l) => (
             <option key={l} value={l}>{l}</option>
           ))}
         </select>
       </div>
 
-      <div className="repos-header">
-        <h1 className="repos-title">Repositories</h1>
-        <span className="repos-count">
-          {hasFilter
-            ? `${filtered.length} / ${repos.length} repos`
-            : `${repos.length} repos`}
+      <div className="rl-header">
+        <h1 className="rl-title">Repositories</h1>
+        <span className="rl-count">
+          {hasFilter ? `${filtered.length} / ${repos.length}` : `${repos.length} repos`}
         </span>
       </div>
 
       {filtered.length === 0 ? (
-        <div className="empty-filter">
-          <span className="empty-filter-label">no repos match</span>
-          <button
-            className="clear-btn"
-            onClick={() => { setQuery(""); setLang("all"); }}
-          >
-            clear filters
+        <div className="rl-empty">
+          <span className="rl-empty-label">No repos match</span>
+          <button className="rl-clear" onClick={() => { setQuery(""); setLang("all"); }}>
+            Clear filters
           </button>
         </div>
       ) : (
-        <ul className="repo-list">
+        <ul className="rl-list" style={{ listStyle: "none" }}>
           {filtered.map((repo) => {
             const [owner, repoName] = repo.full_name.split("/");
-            const langColor = repo.language ? (LANG_COLORS[repo.language] ?? "#71717a") : null;
+            const langColor = repo.language ? (LANG_COLORS[repo.language] ?? "#a8a7a0") : null;
 
             return (
               <li key={repo.id}>
-                <Link href={`/dashboard/${owner}/${repoName}`} className="repo-card">
-                  <div className="repo-left">
-                    <p className="repo-name">{repo.full_name}</p>
-                    <p className="repo-desc">
-                      {repo.description ?? "No description"}
-                    </p>
+                <Link href={`/dashboard/${owner}/${repoName}`} className="rl-card">
+                  <div className="rl-left">
+                    <p className="rl-name">{repo.full_name}</p>
+                    <p className="rl-desc">{repo.description ?? "No description"}</p>
                   </div>
-
-                  <div className="repo-right">
-                    {repo.private && <span className="repo-private">private</span>}
+                  <div className="rl-right">
+                    {repo.private && <span className="rl-private">private</span>}
                     {repo.language && langColor && (
-                      <span className="repo-lang">
+                      <span className="rl-lang">
                         <span className="lang-dot" style={{ background: langColor }} />
                         {repo.language}
                       </span>
                     )}
-                    <span className="repo-stars">⭐ {repo.stargazers_count}</span>
-                    <span className="repo-time">
+                    <span className="rl-stars">⭐ {repo.stargazers_count}</span>
+                    <span className="rl-time">
                       {relativeTime(repo.updated_at ?? repo.pushed_at ?? "")}
                     </span>
-                    <span className="repo-arrow">→</span>
+                    <span className="rl-arrow">→</span>
                   </div>
                 </Link>
               </li>

@@ -27,83 +27,97 @@ export default async function DashboardPage() {
   const pct = Math.min(100, (used / FREE_MONTHLY_LIMIT) * 100);
   const resetsAt = new Date(now.getFullYear(), now.getMonth() + 1, 1)
     .toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const isFull = used >= FREE_MONTHLY_LIMIT;
 
   return (
     <>
       <style>{`
-        .quota-bar-wrap {
-          margin-bottom: 24px;
-          border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 4px;
-          padding: 12px 16px;
-          background: rgba(255,255,255,0.015);
-          display: flex; align-items: center; gap: 16px;
+        .dash-top {
+          display: grid; grid-template-columns: 1fr auto;
+          gap: 16px; align-items: start;
+          margin-bottom: 32px;
         }
-        .quota-bar-wrap.quota-full { border-color: rgba(239,68,68,0.2); background: rgba(239,68,68,0.03); }
-        .quota-info { flex: 1; min-width: 0; }
+        @media (max-width: 680px) { .dash-top { grid-template-columns: 1fr; } }
+
+        .dash-analyze-wrap {}
+        .dash-analyze-label {
+          font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+          text-transform: uppercase; color: var(--muted);
+          margin-bottom: 8px;
+        }
+
+        .quota-card {
+          background: #fff; border: 1px solid var(--border);
+          border-radius: 12px; padding: 16px 20px;
+          min-width: 200px;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+        .quota-card.full { border-color: rgba(239,68,68,0.2); background: #fff8f8; }
+        .quota-top {
+          display: flex; align-items: baseline; justify-content: space-between;
+          margin-bottom: 10px;
+        }
         .quota-label {
-          font-family: ui-monospace, monospace; font-size: 10px;
-          color: #52525b; text-transform: uppercase; letter-spacing: 0.08em;
-          margin-bottom: 6px;
+          font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+          text-transform: uppercase; color: var(--dim);
         }
+        .quota-count {
+          font-family: var(--serif); font-size: 22px; font-weight: 700;
+          letter-spacing: -0.03em; color: var(--text);
+        }
+        .quota-count sub { font-size: 13px; font-weight: 400; color: var(--muted); font-family: var(--sans); }
         .quota-track {
-          height: 3px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden;
-          margin-bottom: 6px;
+          height: 3px; background: rgba(0,0,0,0.07);
+          border-radius: 2px; overflow: hidden; margin-bottom: 8px;
         }
         .quota-fill { height: 100%; border-radius: 2px; transition: width .4s; }
-        .quota-fill.ok { background: #a3e635; }
-        .quota-fill.warn { background: #fb923c; }
+        .quota-fill.ok   { background: var(--coral); }
+        .quota-fill.warn { background: #e08040; }
         .quota-fill.full { background: #ef4444; }
         .quota-meta {
-          font-family: ui-monospace, monospace; font-size: 10px; color: #3f3f46;
-          display: flex; gap: 12px;
+          font-family: var(--mono); font-size: 10px;
+          color: var(--dim); display: flex; gap: 10px;
         }
-        .quota-count { font-family: ui-monospace, monospace; font-size: 20px; font-weight: 800; color: #e4e4e7; letter-spacing: -0.03em; white-space: nowrap; }
-        .quota-count-sub { font-size: 11px; font-weight: 400; color: #52525b; }
+        .quota-meta .limit { color: #ef4444; }
       `}</style>
 
-      <div>
-        {/* Quota widget */}
-        <div className={`quota-bar-wrap${used >= FREE_MONTHLY_LIMIT ? " quota-full" : ""}`}>
-          <div className="quota-info">
+      <div className="dash-top">
+        <div className="dash-analyze-wrap">
+          <p className="dash-analyze-label">Analyze any public repo</p>
+          <RepoInputForm basePath="/dashboard" theme="light" />
+        </div>
+
+        <div className={`quota-card${isFull ? " full" : ""}`}>
+          <div className="quota-top">
             <p className="quota-label">Monthly analyses</p>
-            <div className="quota-track">
-              <div
-                className={`quota-fill ${pct < 60 ? "ok" : pct < 100 ? "warn" : "full"}`}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-            <div className="quota-meta">
-              <span>{remaining} remaining</span>
-              <span>resets {resetsAt}</span>
-              {used >= FREE_MONTHLY_LIMIT && (
-                <span style={{ color: "#ef4444" }}>limit reached</span>
-              )}
-            </div>
+            <span className="quota-count">
+              {used}<sub> / {FREE_MONTHLY_LIMIT}</sub>
+            </span>
           </div>
-          <span className="quota-count">
-            {used}<span className="quota-count-sub"> / {FREE_MONTHLY_LIMIT}</span>
-          </span>
+          <div className="quota-track">
+            <div
+              className={`quota-fill ${pct < 60 ? "ok" : pct < 100 ? "warn" : "full"}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <div className="quota-meta">
+            <span>{remaining} remaining</span>
+            <span>resets {resetsAt}</span>
+            {isFull && <span className="limit">limit reached</span>}
+          </div>
         </div>
-
-        <div style={{ marginBottom: 24 }}>
-          <p style={{ fontFamily: "ui-monospace, monospace", fontSize: 10, color: "#52525b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
-            Analyze any public repo
-          </p>
-          <RepoInputForm basePath="/dashboard" />
-        </div>
-
-        <RepoList repos={data.map(r => ({
-          id: r.id,
-          full_name: r.full_name,
-          description: r.description ?? null,
-          language: r.language ?? null,
-          private: r.private,
-          stargazers_count: r.stargazers_count,
-          updated_at: r.updated_at ?? null,
-          pushed_at: r.pushed_at ?? null,
-        }))} />
       </div>
+
+      <RepoList repos={data.map(r => ({
+        id: r.id,
+        full_name: r.full_name,
+        description: r.description ?? null,
+        language: r.language ?? null,
+        private: r.private,
+        stargazers_count: r.stargazers_count,
+        updated_at: r.updated_at ?? null,
+        pushed_at: r.pushed_at ?? null,
+      }))} />
     </>
   );
 }
