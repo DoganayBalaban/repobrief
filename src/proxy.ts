@@ -8,6 +8,10 @@ export default auth((req) => {
   if (isDashboard && !isLoggedIn) {
     return NextResponse.redirect(new URL("/", req.url));
   }
+
+  if (req.nextUrl.pathname === "/" && isLoggedIn) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
 });
 
 export const config = {
