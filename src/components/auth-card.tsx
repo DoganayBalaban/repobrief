@@ -24,7 +24,8 @@ export function AuthCard() {
   const timerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
-    return () => timerRefs.current.forEach(clearTimeout);
+    const timers = timerRefs.current;
+    return () => timers.forEach(clearTimeout);
   }, []);
 
   async function handleSignIn() {

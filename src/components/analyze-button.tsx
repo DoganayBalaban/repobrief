@@ -85,13 +85,6 @@ export const AnalyzeButton = forwardRef<AnalyzeButtonHandle, Props>(function Ana
   const [copied, setCopied]           = useState(false);
   const abortRef                      = useRef<AbortController | null>(null);
 
-  useImperativeHandle(ref, () => ({
-    triggerAnalyze: (force = false) => handleAnalyze(force),
-    exportBrief: () => { if (result) handleExport(result); },
-    hasResult: !!result,
-    isPending,
-  }));
-
   function handleCancel() { abortRef.current?.abort(); }
 
   function handleAnalyze(force = false) {
@@ -208,6 +201,13 @@ export const AnalyzeButton = forwardRef<AnalyzeButtonHandle, Props>(function Ana
     a.download = `${owner}-${repo}-repobrief.md`;
     a.click();
   }
+
+  useImperativeHandle(ref, () => ({
+    triggerAnalyze: (force = false) => handleAnalyze(force),
+    exportBrief: () => { if (result) handleExport(result); },
+    hasResult: !!result,
+    isPending,
+  }));
 
   function handleShare() {
     navigator.clipboard.writeText(`${window.location.origin}/analysis/${owner}/${repo}`).then(() => {

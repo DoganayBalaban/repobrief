@@ -329,7 +329,7 @@ export default async function AuthPage() {
 
           <div className="auth-scopes">
             <div className="auth-scopes-label">
-              <span>// PERMISSIONS REQUESTED</span>
+              <span>{"// PERMISSIONS REQUESTED"}</span>
               <span>03 SCOPES</span>
             </div>
             {SCOPES.map(s => (
