@@ -731,17 +731,6 @@ export default function Page() {
         .rb-footer-col a:hover { color: var(--accent); }
         .rb-footer-bottom { max-width: 1320px; margin: 48px auto 0; padding-top: 20px; border-top: 1px solid var(--line-soft); display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-muted); letter-spacing: 0.06em; }
 
-        /* tweaks */
-        .rb-tweaks { position: fixed; bottom: 24px; right: 24px; z-index: 100; background: var(--bg-elevated); border: 1px solid var(--line); padding: 16px; font-size: 12px; min-width: 240px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); color: var(--ink); }
-        .rb-tweaks-head { display: flex; justify-content: space-between; margin-bottom: 14px; font-size: 11px; color: var(--ink-muted); letter-spacing: 0.12em; }
-        .tweak-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid var(--line-soft); }
-        .tweak-row:first-of-type { border-top: 0; }
-        .tweak-seg { display: flex; border: 1px solid var(--line-soft); }
-        .tweak-seg button { padding: 4px 10px; font-size: 11px; border-right: 1px solid var(--line-soft); color: var(--ink-soft); }
-        .tweak-seg button:last-child { border-right: 0; }
-        .tweak-seg button.on { background: var(--ink); color: var(--bg); }
-        .rb-tweaks-toggle { position: fixed; bottom: 24px; right: 24px; z-index: 99; padding: 8px 12px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid var(--line); background: var(--bg-elevated); color: var(--ink-soft); }
-
         .reveal { opacity: 0; transform: translateY(16px); transition: opacity 600ms ease, transform 600ms ease; }
         .reveal.in { opacity: 1; transform: none; }
 
