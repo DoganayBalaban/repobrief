@@ -1,123 +1,183 @@
-import { getOctokit } from "@/lib/octokit";
-import { auth } from "@/auth";
-import { db } from "@/lib/db";
-import { RepoList } from "@/components/repo-list";
-import { RepoInputForm } from "@/components/repo-input-form";
+import { DashRepoInput } from "@/components/dash-repo-input";
 
-const FREE_MONTHLY_LIMIT = 5;
-
-export default async function DashboardPage() {
-  const session = await auth();
-  const userId = (session as { githubId?: string } | null)?.githubId
-    ?? session?.user?.email
-    ?? null;
-
-  const octokit = await getOctokit();
-  const { data } = await octokit.rest.repos.listForAuthenticatedUser({
-    sort: "updated",
-    per_page: 30,
-  });
-
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const used = userId
-    ? await db.analysis.count({ where: { userId, createdAt: { gte: monthStart } } })
-    : 0;
-  const remaining = Math.max(0, FREE_MONTHLY_LIMIT - used);
-  const pct = Math.min(100, (used / FREE_MONTHLY_LIMIT) * 100);
-  const resetsAt = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-    .toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  const isFull = used >= FREE_MONTHLY_LIMIT;
-
+export default function DashboardPage() {
   return (
     <>
       <style>{`
-        .dash-top {
-          display: grid; grid-template-columns: 1fr auto;
-          gap: 16px; align-items: start;
-          margin-bottom: 32px;
+        /* ── Dashboard landing ── */
+        .dw-section {
+          padding: 72px 40px 48px;
+          border-bottom: 1px solid var(--line-soft);
         }
-        @media (max-width: 680px) { .dash-top { grid-template-columns: 1fr; } }
+        .dw-label {
+          font-size: 10px; letter-spacing: 0.14em;
+          color: var(--ink-muted); text-transform: uppercase;
+          display: flex; align-items: center; gap: 8px;
+        }
+        .dw-label-dot {
+          width: 6px; height: 6px;
+          background: var(--accent); border-radius: 50%;
+        }
+        .dw-title {
+          font-size: clamp(32px, 4vw, 52px);
+          line-height: 1; letter-spacing: -0.025em;
+          color: var(--ink); margin-top: 20px;
+        }
+        .dw-title .accent {
+          color: var(--accent);
+          font-family: var(--font-instrument, Georgia, serif);
+          font-style: italic;
+        }
+        .dw-sub {
+          margin-top: 16px;
+          font-size: 13px; color: var(--ink-soft); line-height: 1.65;
+          max-width: 520px;
+        }
+        .dw-input-wrap {
+          margin-top: 32px;
+          max-width: 600px;
+        }
 
-        .dash-analyze-wrap {}
-        .dash-analyze-label {
-          font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
-          text-transform: uppercase; color: var(--muted);
-          margin-bottom: 8px;
+        /* ── Input component ── */
+        .dri-wrap { display: flex; flex-direction: column; gap: 12px; }
+        .dri-form { display: flex; flex-direction: column; gap: 6px; }
+        .dri-row {
+          display: flex;
+          border: 1px solid var(--line-soft);
+          background: var(--bg-elevated);
+          transition: border-color 150ms;
+        }
+        .dri-row:focus-within { border-color: var(--accent); }
+        .dri-row--error { border-color: oklch(62% 0.18 25); }
+        .dri-prefix {
+          display: grid; place-items: center;
+          padding: 0 12px;
+          font-size: 12px; color: var(--ink-muted);
+          border-right: 1px solid var(--line-soft);
+          white-space: nowrap;
+          user-select: none;
+        }
+        .dri-input {
+          flex: 1;
+          padding: 14px 14px;
+          background: transparent;
+          border: 0; outline: 0;
+          font: inherit; font-size: 13px; color: var(--ink);
+        }
+        .dri-input::placeholder { color: var(--ink-muted); }
+        .dri-btn {
+          padding: 0 22px;
+          background: var(--ink); color: var(--bg);
+          font: inherit; font-size: 13px; letter-spacing: 0.02em;
+          border: 0; cursor: pointer;
+          transition: background 150ms, color 150ms;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+        .dri-btn:hover { background: var(--accent); color: var(--accent-ink); }
+        .dri-error {
+          font-size: 11px; color: oklch(62% 0.18 25);
+          letter-spacing: 0.02em;
+        }
+        .dri-examples {
+          display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        }
+        .dri-examples-label {
+          font-size: 11px; color: var(--ink-muted);
+          letter-spacing: 0.06em; text-transform: uppercase;
+        }
+        .dri-pill {
+          padding: 4px 10px;
+          border: 1px solid var(--line-soft);
+          font: inherit; font-size: 11px;
+          color: var(--ink-soft);
+          background: transparent; cursor: pointer;
+          transition: all 150ms;
+        }
+        .dri-pill:hover { border-color: var(--line); color: var(--ink); background: var(--bg-soft); }
+
+        /* ── How it works tiles ── */
+        .dw-tiles {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          border-top: 1px solid var(--line-soft);
+        }
+        .dw-tile {
+          padding: 28px 28px 32px;
+          border-right: 1px solid var(--line-soft);
+          position: relative;
+        }
+        .dw-tile:last-child { border-right: 0; }
+        .dw-tile-num {
+          font-size: 10px; letter-spacing: 0.14em;
+          color: var(--ink-muted); text-transform: uppercase;
+        }
+        .dw-tile-title {
+          font-size: 18px; margin-top: 16px;
+          letter-spacing: -0.01em; color: var(--ink); line-height: 1.2;
+        }
+        .dw-tile-desc {
+          margin-top: 8px; font-size: 12px;
+          color: var(--ink-soft); line-height: 1.6;
+        }
+        .dw-tile-glyph {
+          margin-top: 20px;
+          font-size: 22px; color: var(--accent);
+          opacity: 0.6;
         }
 
-        .quota-card {
-          background: #fff; border: 1px solid var(--border);
-          border-radius: 12px; padding: 16px 20px;
-          min-width: 200px;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        @media (max-width: 900px) {
+          .dw-section { padding: 40px 24px 40px; }
+          .dw-tiles { grid-template-columns: 1fr; }
+          .dw-tile { border-right: 0; border-bottom: 1px solid var(--line-soft); }
         }
-        .quota-card.full { border-color: rgba(239,68,68,0.2); background: #fff8f8; }
-        .quota-top {
-          display: flex; align-items: baseline; justify-content: space-between;
-          margin-bottom: 10px;
-        }
-        .quota-label {
-          font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
-          text-transform: uppercase; color: var(--dim);
-        }
-        .quota-count {
-          font-family: var(--serif); font-size: 22px; font-weight: 700;
-          letter-spacing: -0.03em; color: var(--text);
-        }
-        .quota-count sub { font-size: 13px; font-weight: 400; color: var(--muted); font-family: var(--sans); }
-        .quota-track {
-          height: 3px; background: rgba(0,0,0,0.07);
-          border-radius: 2px; overflow: hidden; margin-bottom: 8px;
-        }
-        .quota-fill { height: 100%; border-radius: 2px; transition: width .4s; }
-        .quota-fill.ok   { background: var(--coral); }
-        .quota-fill.warn { background: #e08040; }
-        .quota-fill.full { background: #ef4444; }
-        .quota-meta {
-          font-family: var(--mono); font-size: 10px;
-          color: var(--dim); display: flex; gap: 10px;
-        }
-        .quota-meta .limit { color: #ef4444; }
       `}</style>
 
-      <div className="dash-top">
-        <div className="dash-analyze-wrap">
-          <p className="dash-analyze-label">Analyze any public repo</p>
-          <RepoInputForm basePath="/dashboard" theme="light" />
+      <div className="dw-section">
+        <div className="dw-label">
+          <span className="dw-label-dot" />
+          <span>REPOBRIEF — DASHBOARD</span>
         </div>
+        <h1 className="dw-title">
+          Understand any repo<br />
+          in <span className="accent">seconds.</span>
+        </h1>
+        <p className="dw-sub">
+          Select a repository from the sidebar, or paste any GitHub URL below
+          to analyze it — architecture, tech stack, and AI-generated brief.
+        </p>
 
-        <div className={`quota-card${isFull ? " full" : ""}`}>
-          <div className="quota-top">
-            <p className="quota-label">Monthly analyses</p>
-            <span className="quota-count">
-              {used}<sub> / {FREE_MONTHLY_LIMIT}</sub>
-            </span>
-          </div>
-          <div className="quota-track">
-            <div
-              className={`quota-fill ${pct < 60 ? "ok" : pct < 100 ? "warn" : "full"}`}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <div className="quota-meta">
-            <span>{remaining} remaining</span>
-            <span>resets {resetsAt}</span>
-            {isFull && <span className="limit">limit reached</span>}
-          </div>
+        <div className="dw-input-wrap">
+          <DashRepoInput basePath="/dashboard" />
         </div>
       </div>
 
-      <RepoList repos={data.map(r => ({
-        id: r.id,
-        full_name: r.full_name,
-        description: r.description ?? null,
-        language: r.language ?? null,
-        private: r.private,
-        stargazers_count: r.stargazers_count,
-        updated_at: r.updated_at ?? null,
-        pushed_at: r.pushed_at ?? null,
-      }))} />
+      <div className="dw-tiles">
+        <div className="dw-tile">
+          <div className="dw-tile-num">01 — PASTE</div>
+          <div className="dw-tile-title">Any GitHub URL</div>
+          <p className="dw-tile-desc">
+            Public or private repos — paste a URL, type owner/repo, or pick from the sidebar.
+          </p>
+          <div className="dw-tile-glyph">⌘</div>
+        </div>
+        <div className="dw-tile">
+          <div className="dw-tile-num">02 — ANALYZE</div>
+          <div className="dw-tile-title">AI reads the code</div>
+          <p className="dw-tile-desc">
+            Claude scans up to 150 key files and maps the full architecture in seconds.
+          </p>
+          <div className="dw-tile-glyph">◈</div>
+        </div>
+        <div className="dw-tile">
+          <div className="dw-tile-num">03 — BRIEF</div>
+          <div className="dw-tile-title">Instant understanding</div>
+          <p className="dw-tile-desc">
+            Architecture diagram, tech stack, file map, and onboarding guide — ready to share.
+          </p>
+          <div className="dw-tile-glyph">⬡</div>
+        </div>
+      </div>
     </>
   );
 }

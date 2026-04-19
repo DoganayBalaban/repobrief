@@ -1,12 +1,13 @@
-import { auth, signIn } from "@/auth";
+import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { AuthCard } from "@/components/auth-card";
 
-const GH_ICON = (
-  <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true" style={{ flexShrink: 0 }}>
-    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-  </svg>
-);
+const SCOPES = [
+  { key: "read:user", desc: "Your public profile, username, avatar, and email address.", badge: "REQUIRED", cls: "ok" },
+  { key: "repo:read", desc: "Read-only access to your repositories — file contents, metadata, and branches. No write access.", badge: "READ ONLY", cls: "ok" },
+  { key: "user:email", desc: "Used to send you analysis receipts. Never shared, never sold.", badge: "OPTIONAL", cls: "" },
+];
 
 export default async function AuthPage() {
   const session = await auth();
@@ -18,173 +19,356 @@ export default async function AuthPage() {
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-          --bg:      #faf9f6;
-          --text:    #0f0e0d;
-          --muted:   #6d6c65;
-          --coral:   #d97757;
-          --coral-dim: rgba(217,119,87,0.11);
-          --border:  rgba(0,0,0,0.08);
-          --serif:   var(--font-playfair), Georgia, serif;
-          --sans:    var(--font-dm-sans), system-ui, sans-serif;
-          --mono:    var(--font-dm-mono), ui-monospace, monospace;
+          --bg:           #faf9f6;
+          --bg-elevated:  #ffffff;
+          --bg-soft:      #f3f2ef;
+          --ink:          #0f0e0d;
+          --ink-soft:     #3d3c38;
+          --ink-muted:    #8a8880;
+          --line:         rgba(0,0,0,0.12);
+          --line-soft:    rgba(0,0,0,0.07);
+          --line-hairline:rgba(0,0,0,0.04);
+          --accent:       oklch(68% 0.17 135);
+          --accent-ink:   #0f0e0d;
+          --ok:           oklch(60% 0.16 150);
+          --warn:         oklch(62% 0.18 25);
+          --grid:         rgba(0,0,0,0.04);
         }
 
-        body { background: var(--bg); font-family: var(--sans); }
-
-        @keyframes rise {
-          from { opacity: 0; transform: translateY(18px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes blob-drift {
-          0%,100% { transform: translate(-50%,-50%) scale(1); }
-          50%      { transform: translate(-50%,-50%) scale(1.08) translateY(12px); }
-        }
-
-        .auth-root {
-          min-height: 100vh;
+        html, body { height: 100%; }
+        body {
           background: var(--bg);
-          display: flex; flex-direction: column;
-          align-items: center; justify-content: center;
-          position: relative; overflow: hidden;
-          padding: 2rem 1.5rem;
+          font-family: var(--font-dm-sans, system-ui, sans-serif);
+          color: var(--ink);
+          -webkit-font-smoothing: antialiased;
         }
-        .auth-blob {
-          position: absolute;
-          width: 700px; height: 500px;
-          top: 50%; left: 50%;
-          transform: translate(-50%,-50%);
-          background: radial-gradient(ellipse at center,
-            rgba(217,119,87,0.1) 0%,
-            rgba(217,119,87,0.04) 45%,
-            transparent 70%);
-          animation: blob-drift 14s ease-in-out infinite;
-          pointer-events: none;
-        }
+
+        a { text-decoration: none; color: inherit; }
+        button { background: none; border: 0; cursor: pointer; font: inherit; }
+
+        /* Layout */
         .auth-wrap {
+          min-height: 100vh;
+          display: grid;
+          grid-template-columns: 1.1fr 1fr;
+          background: var(--bg);
+          position: relative;
+        }
+        .auth-wrap::before {
+          content: "";
+          position: absolute; inset: 0;
+          background-image:
+            linear-gradient(var(--grid) 1px, transparent 1px),
+            linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+          background-size: 56px 56px;
+          pointer-events: none;
+          mask-image: radial-gradient(circle at 20% 30%, black 0%, transparent 60%);
+          z-index: 0;
+        }
+
+        /* Left panel */
+        .auth-left {
+          padding: 40px 56px;
+          border-right: 1px solid var(--line);
+          display: flex; flex-direction: column;
           position: relative; z-index: 1;
-          width: 100%; max-width: 380px;
-          animation: rise .55s cubic-bezier(.16,1,.3,1) both;
+          background: var(--bg);
         }
-
-        /* back link */
-        .auth-back {
-          display: inline-flex; align-items: center; gap: 6px;
-          font-family: var(--mono); font-size: 11px; color: var(--muted);
-          text-decoration: none; margin-bottom: 32px;
-          transition: color .15s;
+        .auth-brand {
+          display: flex; align-items: center; gap: 10px;
+          font-size: 15px; font-weight: 500;
+          font-family: var(--font-jetbrains, monospace);
         }
-        .auth-back:hover { color: var(--text); }
-
-        /* logo */
-        .auth-logo {
-          display: block; text-align: center;
-          font-family: var(--serif); font-size: 20px; font-weight: 700;
-          letter-spacing: -0.02em; color: var(--text);
-          text-decoration: none; margin-bottom: 36px;
+        .auth-brand-mark {
+          width: 22px; height: 22px;
+          background: var(--ink); color: var(--bg);
+          display: grid; place-items: center;
+          font-size: 12px; font-weight: 600;
         }
-        .auth-logo em { color: var(--coral); font-style: italic; }
-
-        /* card */
-        .auth-card {
-          background: #ffffff;
-          border: 1px solid var(--border);
-          border-radius: 16px;
-          padding: 36px 32px;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+        .auth-brand-tag {
+          font-size: 11px; color: var(--ink-muted);
+          letter-spacing: 0.08em; margin-left: 4px;
         }
-        .auth-heading {
-          font-family: var(--serif);
-          font-size: 2rem; font-weight: 700;
-          letter-spacing: -0.03em; line-height: 1.1;
-          color: var(--text); margin-bottom: 8px;
-          text-align: center;
+        .auth-backlink {
+          margin-top: 40px;
+          font-size: 12px; color: var(--ink-muted);
+          letter-spacing: 0.08em; text-transform: uppercase;
+          display: inline-flex; align-items: center; gap: 8px;
+          width: fit-content; transition: color 150ms;
+          font-family: var(--font-jetbrains, monospace);
+        }
+        .auth-backlink:hover { color: var(--ink); }
+        .auth-headline-block {
+          margin-top: auto;
+          padding: 60px 0 40px;
+          max-width: 520px;
+        }
+        .auth-eyebrow {
+          display: inline-flex; align-items: center; gap: 8px;
+          font-size: 11px; text-transform: uppercase;
+          letter-spacing: 0.12em; color: var(--ink-muted);
+          font-family: var(--font-jetbrains, monospace);
+        }
+        .auth-eyebrow-dot {
+          width: 6px; height: 6px;
+          background: var(--accent); border-radius: 50%;
+          flex-shrink: 0;
+        }
+        .auth-title {
+          font-size: clamp(40px, 4.5vw, 64px);
+          line-height: 0.98;
+          letter-spacing: -0.025em;
+          margin-top: 20px; color: var(--ink);
+          font-family: var(--font-jetbrains, monospace);
+          font-weight: 400;
+        }
+        .auth-title .serif {
+          font-family: var(--font-instrument, Georgia, serif);
+          font-style: italic; color: var(--accent);
         }
         .auth-sub {
-          font-size: 13px; color: var(--muted); font-weight: 300;
-          line-height: 1.7; text-align: center; margin-bottom: 28px;
+          margin-top: 24px; font-size: 14px;
+          line-height: 1.7; color: var(--ink-soft);
+          max-width: 460px;
         }
 
-        /* github button */
+        /* Scopes */
+        .auth-scopes { margin-top: 44px; max-width: 520px; }
+        .auth-scopes-label {
+          font-size: 11px; letter-spacing: 0.12em;
+          color: var(--ink-muted); text-transform: uppercase;
+          padding-bottom: 12px; border-bottom: 1px solid var(--line);
+          display: flex; justify-content: space-between;
+          font-family: var(--font-jetbrains, monospace);
+        }
+        .scope-item {
+          display: grid; grid-template-columns: 140px 1fr auto;
+          gap: 16px; padding: 18px 0;
+          border-bottom: 1px solid var(--line-soft);
+          align-items: start;
+        }
+        .scope-key {
+          font-size: 11px; letter-spacing: 0.08em;
+          color: var(--ink); text-transform: uppercase;
+          font-family: var(--font-jetbrains, monospace);
+        }
+        .scope-desc { font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+        .scope-badge {
+          font-size: 10px; letter-spacing: 0.08em;
+          padding: 3px 8px; border: 1px solid var(--line-soft);
+          color: var(--ink-muted); text-transform: uppercase;
+          white-space: nowrap;
+          font-family: var(--font-jetbrains, monospace);
+        }
+        .scope-badge.ok { color: var(--ok); border-color: var(--ok); }
+
+        .auth-footer-left {
+          margin-top: auto; padding-top: 40px;
+          display: flex; justify-content: space-between;
+          font-size: 11px; color: var(--ink-muted);
+          letter-spacing: 0.08em; text-transform: uppercase;
+          font-family: var(--font-jetbrains, monospace);
+        }
+
+        /* Right panel */
+        .auth-right {
+          padding: 40px 56px;
+          display: flex; flex-direction: column;
+          align-items: stretch; justify-content: center;
+          position: relative; z-index: 1;
+          background: var(--bg);
+        }
+
+        /* Card */
+        .auth-card {
+          max-width: 460px; margin: 0 auto; width: 100%;
+          border: 1px solid var(--line);
+          background: var(--bg-elevated);
+        }
+        .auth-card-head {
+          padding: 14px 20px;
+          border-bottom: 1px solid var(--line-soft);
+          font-size: 11px; color: var(--ink-muted);
+          letter-spacing: 0.1em; text-transform: uppercase;
+          display: flex; justify-content: space-between; align-items: center;
+          font-family: var(--font-jetbrains, monospace);
+        }
+        .auth-card-head-dots { display: flex; gap: 6px; }
+        .auth-card-head-dots .dot {
+          width: 9px; height: 9px;
+          border: 1px solid var(--line-soft);
+        }
+        .auth-card-body { padding: 36px 32px 32px; }
+        .auth-card-title {
+          font-size: 22px; letter-spacing: -0.015em; line-height: 1.25;
+          font-family: var(--font-jetbrains, monospace); font-weight: 500;
+        }
+        .auth-card-sub {
+          margin-top: 10px; font-size: 13px;
+          color: var(--ink-soft); line-height: 1.6;
+        }
+
+        /* GitHub button */
         .gh-btn {
-          display: flex; align-items: center; justify-content: center; gap: 8px;
-          width: 100%;
-          background: var(--text); color: #fff;
-          font-family: var(--sans); font-size: 14px; font-weight: 600;
-          padding: 13px 24px; border-radius: 8px;
-          border: none; cursor: pointer;
-          transition: opacity .15s, transform .2s;
+          width: 100%; margin-top: 28px;
+          padding: 16px 20px;
+          display: flex; align-items: center; justify-content: space-between;
+          background: var(--ink); color: var(--bg);
+          border: 1px solid var(--ink); font: inherit; font-size: 14px;
+          cursor: pointer; transition: all 200ms;
+          position: relative; overflow: hidden;
         }
-        .gh-btn:hover { opacity: 0.82; transform: translateY(-1px); }
+        .gh-btn:hover {
+          background: var(--accent); color: var(--accent-ink);
+          border-color: var(--accent);
+        }
+        .gh-btn-left { display: flex; align-items: center; gap: 12px; }
+        .gh-btn-arrow { font-size: 16px; transition: transform 200ms; }
+        .gh-btn:hover .gh-btn-arrow { transform: translateX(4px); }
 
-        /* divider */
-        .auth-divider {
-          border: none; border-top: 1px solid var(--border);
-          margin: 24px 0;
+        /* Auth steps */
+        .auth-state {
+          margin-top: 24px;
+          border-top: 1px dashed var(--line-soft);
+          padding-top: 20px; font-size: 12px;
+          color: var(--ink-soft);
+          font-family: var(--font-jetbrains, monospace);
+        }
+        .state-row {
+          display: grid; grid-template-columns: 22px 1fr auto;
+          gap: 10px; padding: 7px 0; align-items: center;
+          opacity: 0.35; transition: opacity 200ms;
+        }
+        .state-row.active { opacity: 1; }
+        .state-row.active .state-label { color: var(--ink); }
+        .state-row.done { opacity: 0.7; }
+        .state-idx { font-size: 10px; color: var(--ink-muted); letter-spacing: 0.08em; }
+        .state-label { font-size: 12px; }
+        .state-tick {
+          font-size: 11px; color: var(--ink-muted);
+          min-width: 50px; text-align: right;
+        }
+        .state-row.active .state-tick { color: var(--accent); }
+        .state-row.done .state-tick { color: var(--ok); }
+        .gh-btn-progress {
+          position: absolute; bottom: 0; left: 0;
+          height: 2px; background: var(--accent);
+          transition: width 60ms linear;
         }
 
-        /* feature list */
-        .auth-features { display: flex; flex-direction: column; gap: 8px; }
-        .auth-feature {
-          display: flex; align-items: center; gap: 9px;
-          font-size: 13px; color: var(--muted); font-weight: 300;
+        .auth-card-foot {
+          padding: 14px 20px; border-top: 1px solid var(--line-soft);
+          font-size: 11px; color: var(--ink-muted);
+          letter-spacing: 0.08em;
+          display: flex; justify-content: space-between; align-items: center;
+          font-family: var(--font-jetbrains, monospace);
         }
-        .auth-check {
-          width: 16px; height: 16px; border-radius: 50%;
-          background: var(--coral-dim);
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0; font-size: 9px; color: var(--coral);
-        }
+        .auth-card-foot a { color: var(--ink-soft); transition: color 150ms; }
+        .auth-card-foot a:hover { color: var(--accent); }
 
-        /* footer */
-        .auth-footer {
-          font-family: var(--mono); font-size: 11px; color: #c0bfb8;
-          text-align: center; margin-top: 24px;
+        /* Alt + trust */
+        .auth-alt {
+          max-width: 460px; margin: 24px auto 0; width: 100%;
+          font-size: 12px; color: var(--ink-muted);
+        }
+        .auth-alt a {
+          color: var(--ink); border-bottom: 1px solid var(--line-soft);
+          padding-bottom: 2px; transition: all 150ms;
+        }
+        .auth-alt a:hover { border-color: var(--accent); color: var(--accent); }
+        .auth-trust {
+          max-width: 460px; margin: 48px auto 0; width: 100%;
+          border-top: 1px solid var(--line-soft); padding-top: 20px;
+          display: grid; grid-template-columns: repeat(3, 1fr);
+          gap: 16px; font-size: 11px; color: var(--ink-muted);
+        }
+        .trust-item { display: flex; flex-direction: column; gap: 4px; }
+        .trust-item-k {
+          font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+          color: var(--ink-muted);
+          font-family: var(--font-jetbrains, monospace);
+        }
+        .trust-item-v { font-size: 12px; color: var(--ink); letter-spacing: -0.005em; }
+
+        @media (max-width: 960px) {
+          .auth-wrap { grid-template-columns: 1fr; }
+          .auth-left { border-right: 0; border-bottom: 1px solid var(--line); padding: 28px 24px; }
+          .auth-right { padding: 28px 24px 48px; }
+          .auth-headline-block { padding: 40px 0 24px; }
+          .auth-trust { grid-template-columns: 1fr; }
+          .scope-item { grid-template-columns: 1fr auto; }
+          .scope-key { grid-column: 1 / -1; }
         }
       `}</style>
 
-      <div className="auth-root">
-        <div className="auth-blob" aria-hidden="true" />
+      <div className="auth-wrap">
+        {/* Left panel */}
+        <div className="auth-left">
+          <Link href="/" className="auth-brand">
+            <span className="auth-brand-mark">R</span>
+            <span>repobrief</span>
+            <span className="auth-brand-tag">v0.4</span>
+          </Link>
 
-        <div className="auth-wrap">
-          <Link href="/" className="auth-back">← back to home</Link>
+          <Link href="/" className="auth-backlink">← back to home</Link>
 
-          <Link href="/" className="auth-logo">Repo<em>Brief</em></Link>
-
-          <div className="auth-card">
-            <h1 className="auth-heading">Sign in</h1>
-            <p className="auth-sub">
-              Connect GitHub to analyze your repositories with Claude.
-            </p>
-
-            <form
-              action={async () => {
-                "use server";
-                await signIn("github", { redirectTo: "/dashboard" });
-              }}
-            >
-              <button type="submit" className="gh-btn">
-                {GH_ICON}
-                Continue with GitHub
-              </button>
-            </form>
-
-            <hr className="auth-divider" />
-
-            <div className="auth-features">
-              {[
-                "Read-only access to your repo list",
-                "5 free analyses per month",
-                "No credit card required",
-              ].map(item => (
-                <div key={item} className="auth-feature">
-                  <span className="auth-check">✓</span>
-                  {item}
-                </div>
-              ))}
+          <div className="auth-headline-block">
+            <div className="auth-eyebrow">
+              <span className="auth-eyebrow-dot" />
+              AUTHORIZATION · STEP 01 OF 01
             </div>
+            <h1 className="auth-title">
+              Connect once.<br />
+              Read any repo <span className="serif">forever.</span>
+            </h1>
+            <p className="auth-sub">
+              We use GitHub sign-in so you don&apos;t have to manage another password — and so analysis of your
+              private repos works without uploading a single line of code. Read-only. Revoke anytime.
+            </p>
           </div>
 
-          <p className="auth-footer">RepoBrief © 2026</p>
+          <div className="auth-scopes">
+            <div className="auth-scopes-label">
+              <span>// PERMISSIONS REQUESTED</span>
+              <span>03 SCOPES</span>
+            </div>
+            {SCOPES.map(s => (
+              <div className="scope-item" key={s.key}>
+                <div className="scope-key">{s.key}</div>
+                <div className="scope-desc">{s.desc}</div>
+                <div className={`scope-badge${s.cls ? ` ${s.cls}` : ""}`}>{s.badge}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="auth-footer-left">
+            <span>SOC 2 TYPE II · IN PROGRESS</span>
+            <span>ISTANBUL // 2026</span>
+          </div>
+        </div>
+
+        {/* Right panel */}
+        <div className="auth-right">
+          <AuthCard />
+
+          <div className="auth-alt">
+            <span>don&apos;t have a GitHub account? <a href="https://github.com/signup" target="_blank" rel="noreferrer">create one →</a></span>
+          </div>
+
+          <div className="auth-trust">
+            <div className="trust-item">
+              <span className="trust-item-k">DATA</span>
+              <span className="trust-item-v">never stored</span>
+            </div>
+            <div className="trust-item">
+              <span className="trust-item-k">SCOPE</span>
+              <span className="trust-item-v">read-only</span>
+            </div>
+            <div className="trust-item">
+              <span className="trust-item-k">REVOKE</span>
+              <span className="trust-item-v">one click, anytime</span>
+            </div>
+          </div>
         </div>
       </div>
     </>

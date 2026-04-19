@@ -1,13 +1,21 @@
 "use client";
 
-import { useTransition, useState, useRef } from "react";
+import { useTransition, useState, useRef, forwardRef, useImperativeHandle } from "react";
 import { parseAnalysisXml, type AnalysisResult } from "@/lib/parse-xml";
 import { MermaidDiagram } from "@/components/mermaid-diagram";
+
+export interface AnalyzeButtonHandle {
+  triggerAnalyze: (force?: boolean) => void;
+  exportBrief: () => void;
+  hasResult: boolean;
+  isPending: boolean;
+}
 
 interface Props {
   owner: string;
   repo: string;
   isAnonymous?: boolean;
+  hideToolbar?: boolean;
 }
 
 interface TechItem {
@@ -65,7 +73,10 @@ const S = {
   cardBody: { padding: "20px" },
 };
 
-export function AnalyzeButton({ owner, repo, isAnonymous = false }: Props) {
+export const AnalyzeButton = forwardRef<AnalyzeButtonHandle, Props>(function AnalyzeButton(
+  { owner, repo, isAnonymous = false, hideToolbar = false },
+  ref
+) {
   const [isPending, startTransition] = useTransition();
   const [streamText, setStreamText]   = useState("");
   const [result, setResult]           = useState<AnalysisResult | null>(null);
@@ -73,6 +84,13 @@ export function AnalyzeButton({ owner, repo, isAnonymous = false }: Props) {
   const [cacheStatus, setCacheStatus] = useState<{ hit: boolean; commitSha: string; age: number } | null>(null);
   const [copied, setCopied]           = useState(false);
   const abortRef                      = useRef<AbortController | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    triggerAnalyze: (force = false) => handleAnalyze(force),
+    exportBrief: () => { if (result) handleExport(result); },
+    hasResult: !!result,
+    isPending,
+  }));
 
   function handleCancel() { abortRef.current?.abort(); }
 
@@ -357,36 +375,38 @@ export function AnalyzeButton({ owner, repo, isAnonymous = false }: Props) {
         .ab-anon-btn:hover { opacity: 0.88; }
       `}</style>
 
-      {/* Toolbar */}
-      <div className="ab-toolbar">
-        <button
-          className="ab-btn"
-          onClick={() => handleAnalyze()}
-          disabled={isPending}
-        >
-          {isPending ? <><span className="ab-spinner" /> Analyzing…</> : "Analyze with Claude"}
-        </button>
+      {/* Toolbar — hidden when parent crumb handles the triggers */}
+      {!hideToolbar && (
+        <div className="ab-toolbar">
+          <button
+            className="ab-btn"
+            onClick={() => handleAnalyze()}
+            disabled={isPending}
+          >
+            {isPending ? <><span className="ab-spinner" /> Analyzing…</> : "Analyze with Claude"}
+          </button>
 
-        {isPending && (
-          <button className="ab-btn-ghost" onClick={handleCancel}>Cancel</button>
-        )}
+          {isPending && (
+            <button className="ab-btn-ghost" onClick={handleCancel}>Cancel</button>
+          )}
 
-        {result && !isPending && !error && (
-          <>
-            <button className="ab-btn-ghost" onClick={handleShare}>
-              {copied ? "✓ Copied!" : "Share link"}
-            </button>
-            <button className="ab-btn-ghost" onClick={() => handleExport(result)}>
-              Export MD
-            </button>
-            {cacheStatus?.hit && (
-              <button className="ab-btn-ghost" onClick={() => handleAnalyze(true)}>
-                Re-analyze
+          {result && !isPending && !error && (
+            <>
+              <button className="ab-btn-ghost" onClick={handleShare}>
+                {copied ? "✓ Copied!" : "Share link"}
               </button>
-            )}
-          </>
-        )}
-      </div>
+              <button className="ab-btn-ghost" onClick={() => handleExport(result)}>
+                Export MD
+              </button>
+              {cacheStatus?.hit && (
+                <button className="ab-btn-ghost" onClick={() => handleAnalyze(true)}>
+                  Re-analyze
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Error */}
       {error && <div className="ab-error">{error}</div>}
@@ -546,4 +566,4 @@ export function AnalyzeButton({ owner, repo, isAnonymous = false }: Props) {
       )}
     </>
   );
-}
+});
