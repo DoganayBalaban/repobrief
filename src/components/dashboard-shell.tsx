@@ -19,7 +19,6 @@ interface Props {
   repos: ShellRepo[];
   user: { name?: string | null; email?: string | null; image?: string | null };
   usage: { used: number; limit: number; resetsAt: string; daysLeft: number };
-  signOutForm: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -132,7 +131,6 @@ export function DashboardShell({
   repos,
   user,
   usage,
-  signOutForm,
   children,
 }: Props) {
   const [query, setQuery] = useState("");
@@ -360,9 +358,10 @@ export function DashboardShell({
         .dash-nav-avatar {
           padding: 0 20px; height: 100%;
           display: flex; align-items: center; gap: 10px;
-          cursor: default;
+          cursor: pointer;
           transition: background 150ms;
           position: relative;
+          text-decoration: none; color: var(--ink);
         }
         .dash-nav-avatar:hover { background: var(--bg-soft); }
         .dash-nav-avatar-pill {
@@ -379,17 +378,9 @@ export function DashboardShell({
         }
         .dash-nav-avatar-name { font-size: 13px; letter-spacing: -0.005em; }
         .dash-nav-avatar-user { font-size: 11px; color: var(--ink-muted); }
-        .dash-nav-avatar-signout {
-          margin-left: 8px;
+        .dash-nav-avatar-chevron {
+          font-size: 10px; color: var(--ink-muted); margin-left: 4px;
         }
-        .dash-signout-btn {
-          font-size: 11px; letter-spacing: 0.04em;
-          color: var(--ink-muted);
-          padding: 5px 10px;
-          border: 1px solid var(--line-soft);
-          transition: all 150ms; cursor: pointer;
-        }
-        .dash-signout-btn:hover { color: var(--ink); border-color: var(--line); }
 
         /* ── Usage meter ── */
         .dash-usage {
@@ -831,7 +822,7 @@ export function DashboardShell({
             >
               {theme === "light" ? "◑" : "◐"}
             </button>
-            <div className="dash-nav-avatar">
+            <Link href="/dashboard/settings" className="dash-nav-avatar">
               {user.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -850,8 +841,8 @@ export function DashboardShell({
                   @{(user.name ?? "").toLowerCase().replace(/\s+/g, "")}
                 </div>
               </div>
-              <div className="dash-nav-avatar-signout">{signOutForm}</div>
-            </div>
+              <span className="dash-nav-avatar-chevron">›</span>
+            </Link>
           </div>
         </nav>
 
