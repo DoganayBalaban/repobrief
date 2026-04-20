@@ -1,4 +1,4 @@
-import { auth, signOut } from "@/auth";
+import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getOctokit } from "@/lib/octokit";
 import { db } from "@/lib/db";
@@ -40,19 +40,6 @@ export default async function DashboardLayout({
     day: "numeric",
   });
 
-  const signOutForm = (
-    <form
-      action={async () => {
-        "use server";
-        await signOut({ redirectTo: "/" });
-      }}
-    >
-      <button type="submit" className="dash-signout-btn">
-        sign out
-      </button>
-    </form>
-  );
-
   return (
     <DashboardShell
       repos={data.map((r) => ({
@@ -71,7 +58,6 @@ export default async function DashboardLayout({
         image: session.user.image,
       }}
       usage={{ used, limit: FREE_MONTHLY_LIMIT, resetsAt, daysLeft }}
-      signOutForm={signOutForm}
     >
       {children}
     </DashboardShell>
